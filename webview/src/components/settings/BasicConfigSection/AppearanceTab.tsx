@@ -137,60 +137,60 @@ const UI_STYLE_COLOR_DEFAULTS: Record<UiThemeStyle, {
   light: { chatBg: string; chatBar: string; userMsg: string };
 }> = {
   default: {
-    dark: { chatBg: '', chatBar: '', userMsg: '#005fb8' },
-    light: { chatBg: '', chatBar: '', userMsg: '#0078d4' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   lightGlass: {
-    dark: { chatBg: '#161922', chatBar: '#1f2430', userMsg: '#0284c7' },
-    light: { chatBg: '#f3f6fc', chatBar: '#eef2f9', userMsg: '#0284c7' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   antigravity: {
-    dark: { chatBg: '#13151a', chatBar: '#1e2129', userMsg: '#7c3aed' },
-    light: { chatBg: '#f7f8fb', chatBar: '#eff2f8', userMsg: '#7c3aed' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   codebuddy: {
-    dark: { chatBg: '#18191c', chatBar: '#222429', userMsg: '#2563eb' },
-    light: { chatBg: '#ffffff', chatBar: '#f4f5f8', userMsg: '#2563eb' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   idea: {
-    dark: { chatBg: '#1e1f22', chatBar: '#2b2d30', userMsg: '#3574f0' },
-    light: { chatBg: '#f7f8fa', chatBar: '#ebecf0', userMsg: '#3574f0' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   vscode: {
-    dark: { chatBg: '#1e1e1e', chatBar: '#252526', userMsg: '#0078d4' },
-    light: { chatBg: '#ffffff', chatBar: '#f3f3f3', userMsg: '#0078d4' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   qq: {
-    dark: { chatBg: '#121924', chatBar: '#1b2432', userMsg: '#0099ff' },
-    light: { chatBg: '#f0f6ff', chatBar: '#e5f0ff', userMsg: '#0099ff' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   wechat: {
-    dark: { chatBg: '#111814', chatBar: '#19241e', userMsg: '#07c160' },
-    light: { chatBg: '#f5f7f5', chatBar: '#eaf0ea', userMsg: '#07c160' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   notion: {
-    dark: { chatBg: '#191919', chatBar: '#202020', userMsg: '#4f4f4f' },
-    light: { chatBg: '#fbfbfa', chatBar: '#f1f1ef', userMsg: '#2eaadc' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   arcGlass: {
-    dark: { chatBg: '#181a20', chatBar: '#22252e', userMsg: '#ec4899' },
-    light: { chatBg: '#fdf2f8', chatBar: '#fce7f3', userMsg: '#ec4899' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   warp: {
-    dark: { chatBg: '#0d1117', chatBar: '#161b22', userMsg: '#238636' },
-    light: { chatBg: '#f6f8fa', chatBar: '#eaeef2', userMsg: '#2da44e' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   vercel: {
-    dark: { chatBg: '#000000', chatBar: '#111111', userMsg: '#0070f3' },
-    light: { chatBg: '#ffffff', chatBar: '#fafafa', userMsg: '#0070f3' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   claudeWarm: {
-    dark: { chatBg: '#1f1c1a', chatBar: '#2c2724', userMsg: '#d97706' },
-    light: { chatBg: '#faf7f2', chatBar: '#f3ece2', userMsg: '#d97706' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   solarized: {
-    dark: { chatBg: '#002b36', chatBar: '#073642', userMsg: '#268bd2' },
-    light: { chatBg: '#fdf6e3', chatBar: '#eee8d5', userMsg: '#268bd2' },
+    dark: { chatBg: '', chatBar: '', userMsg: '' },
+    light: { chatBg: '', chatBar: '', userMsg: '' },
   },
   custom: {
     dark: { chatBg: '#12131a', chatBar: '#1a1c26', userMsg: '#4f46e5' },
