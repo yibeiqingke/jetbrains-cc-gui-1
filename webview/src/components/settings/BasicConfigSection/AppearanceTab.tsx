@@ -588,35 +588,34 @@ const AppearanceTab = ({
           <span className="codicon codicon-paintcan" />
           <span className={styles.fieldLabel}>{t('settings.basic.uiStyle.label')}</span>
         </div>
-        <div className={styles.uiStyleGrid}>
+        <select
+          data-testid="settings-ui-style-select"
+          className={styles.languageSelect}
+          value={uiThemeStyle}
+          onChange={(e) => {
+            const styleKey = e.target.value as UiThemeStyle;
+            onUiThemeStyleChange(styleKey);
+            const defaults = UI_STYLE_COLOR_DEFAULTS[styleKey]?.[resolvedTheme];
+            if (defaults) {
+              onChatBgColorChange(defaults.chatBg);
+              onChatBarColorChange(defaults.chatBar);
+              onUserMsgColorChange(defaults.userMsg);
+              setHexInput(defaults.chatBg);
+              setChatBarHexInput(defaults.chatBar);
+              setUserMsgHexInput(defaults.userMsg);
+            }
+          }}
+        >
           {UI_THEME_STYLE_OPTIONS.map((opt) => (
-            <div
-              key={opt.key}
-              className={`${styles.uiStyleCard} ${uiThemeStyle === opt.key ? styles.active : ''}`}
-              onClick={() => {
-                onUiThemeStyleChange(opt.key);
-                const defaults = UI_STYLE_COLOR_DEFAULTS[opt.key]?.[resolvedTheme];
-                if (defaults) {
-                  onChatBgColorChange(defaults.chatBg);
-                  onChatBarColorChange(defaults.chatBar);
-                  onUserMsgColorChange(defaults.userMsg);
-                  setHexInput(defaults.chatBg);
-                  setChatBarHexInput(defaults.chatBar);
-                  setUserMsgHexInput(defaults.userMsg);
-                }
-              }}
-            >
-              <div className={styles.uiStyleCardHeader}>
-                <span className={`codicon ${opt.icon} ${styles.uiStyleCardIcon}`} />
-                <span className={styles.uiStyleCardTitle}>{t(`settings.basic.uiStyle.${opt.key}`)}</span>
-                {uiThemeStyle === opt.key && (
-                  <span className={`codicon codicon-check ${styles.uiStyleCheckBadge}`} />
-                )}
-              </div>
-              <span className={styles.uiStyleCardDesc}>{t(`settings.basic.uiStyle.${opt.key}Desc`)}</span>
-            </div>
+            <option key={opt.key} value={opt.key}>
+              {t(`settings.basic.uiStyle.${opt.key}`)} {t(`settings.basic.uiStyle.${opt.key}Desc`, '') ? `(${t(`settings.basic.uiStyle.${opt.key}Desc`)})` : ''}
+            </option>
           ))}
-        </div>
+        </select>
+        <small className={styles.formHint}>
+          <span className="codicon codicon-info" />
+          <span>{t(`settings.basic.uiStyle.${uiThemeStyle}Desc`, '')}</span>
+        </small>
       </div>
 
       {/* Custom theme editor */}
@@ -812,6 +811,7 @@ const AppearanceTab = ({
           <span className={styles.fieldLabel}>{t('settings.basic.language.label')}</span>
         </div>
         <select
+          data-testid="settings-language-select"
           className={styles.languageSelect}
           value={languageSelection}
           onChange={handleLanguageChange}
