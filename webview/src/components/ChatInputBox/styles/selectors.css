@@ -23,39 +23,39 @@
   color: var(--text-primary);
 }
 
-/* 🚀 Google Antigravity Pill */
+/* Google Antigravity Pill */
 [data-ui-theme="antigravity"] .selector-button {
   border-radius: 14px;
   background: var(--bg-tertiary);
 }
 
-/* 🤖 Tencent CodeBuddy Square Pill */
+/* Tencent CodeBuddy Square Pill */
 [data-ui-theme="codebuddy"] .selector-button {
   border-radius: 6px;
   background: var(--bg-tertiary);
 }
 
-/* 🧠 JetBrains IDEA Compact Pill */
+/* JetBrains IDEA Compact Pill */
 [data-ui-theme="idea"] .selector-button {
   border-radius: 4px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-secondary);
 }
 
-/* 🧩 Visual Studio Code Square Pill */
+/* Visual Studio Code Square Pill */
 [data-ui-theme="vscode"] .selector-button {
   border-radius: 4px;
   background: var(--bg-tertiary);
 }
 
-/* 💬 QQ Social Pill */
+/* QQ Social Pill */
 [data-ui-theme="qq"] .selector-button {
   border-radius: 13px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-secondary);
 }
 
-/* 💚 WeChat Minimal Pill */
+/* WeChat Minimal Pill */
 [data-ui-theme="wechat"] .selector-button {
   border-radius: 9px;
   background: var(--bg-tertiary);

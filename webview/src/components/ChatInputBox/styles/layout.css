@@ -13,7 +13,7 @@
   transition: all 0.2s ease;
 }
 
-/* 🚀 Google Antigravity Capsule Floating Dock */
+/* Google Antigravity Capsule Floating Dock */
 [data-ui-theme="antigravity"] .chat-input-box {
   border-radius: 22px;
   background: var(--bg-secondary);
@@ -21,7 +21,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-/* 🤖 Tencent CodeBuddy Rounded Card Dock */
+/* Tencent CodeBuddy Rounded Card Dock */
 [data-ui-theme="codebuddy"] .chat-input-box {
   border-radius: 12px;
   background: var(--bg-secondary);
@@ -29,7 +29,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-/* 🧠 JetBrains IDEA Compact Dock */
+/* JetBrains IDEA Compact Dock */
 [data-ui-theme="idea"] .chat-input-box {
   border-radius: 5px;
   background: var(--bg-secondary);
@@ -37,7 +37,7 @@
   box-shadow: none;
 }
 
-/* 🧩 Visual Studio Code Compact Dock */
+/* Visual Studio Code Compact Dock */
 [data-ui-theme="vscode"] .chat-input-box {
   border-radius: 6px;
   background: var(--bg-secondary);
@@ -45,7 +45,7 @@
   box-shadow: none;
 }
 
-/* 💬 QQ Social Dock */
+/* QQ Social Dock */
 [data-ui-theme="qq"] .chat-input-box {
   border-radius: 14px;
   background: var(--bg-secondary);
@@ -53,7 +53,7 @@
   box-shadow: 0 2px 12px rgba(18, 183, 245, 0.08);
 }
 
-/* 💚 WeChat Minimal Dock */
+/* WeChat Minimal Dock */
 [data-ui-theme="wechat"] .chat-input-box {
   border-radius: 10px;
   background: var(--bg-secondary);

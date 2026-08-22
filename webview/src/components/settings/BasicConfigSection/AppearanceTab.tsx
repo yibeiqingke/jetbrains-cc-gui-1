@@ -132,72 +132,6 @@ const SystemIcon = () => (
 
 import type { UiThemeStyle } from '../../../utils/uiTheme';
 
-const UI_STYLE_COLOR_DEFAULTS: Record<UiThemeStyle, {
-  dark: { chatBg: string; chatBar: string; userMsg: string };
-  light: { chatBg: string; chatBar: string; userMsg: string };
-}> = {
-  default: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  lightGlass: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  antigravity: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  codebuddy: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  idea: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  vscode: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  qq: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  wechat: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  notion: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  arcGlass: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  warp: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  vercel: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  claudeWarm: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  solarized: {
-    dark: { chatBg: '', chatBar: '', userMsg: '' },
-    light: { chatBg: '', chatBar: '', userMsg: '' },
-  },
-  custom: {
-    dark: { chatBg: '#12131a', chatBar: '#1a1c26', userMsg: '#4f46e5' },
-    light: { chatBg: '#f8fafc', chatBar: '#ffffff', userMsg: '#2563eb' },
-  },
-};
-
 const UI_THEME_STYLE_OPTIONS: Array<{
   key: UiThemeStyle;
   icon: string;
@@ -593,17 +527,7 @@ const AppearanceTab = ({
           className={styles.languageSelect}
           value={uiThemeStyle}
           onChange={(e) => {
-            const styleKey = e.target.value as UiThemeStyle;
-            onUiThemeStyleChange(styleKey);
-            const defaults = UI_STYLE_COLOR_DEFAULTS[styleKey]?.[resolvedTheme];
-            if (defaults) {
-              onChatBgColorChange(defaults.chatBg);
-              onChatBarColorChange(defaults.chatBar);
-              onUserMsgColorChange(defaults.userMsg);
-              setHexInput(defaults.chatBg);
-              setChatBarHexInput(defaults.chatBar);
-              setUserMsgHexInput(defaults.userMsg);
-            }
+            onUiThemeStyleChange(e.target.value as UiThemeStyle);
           }}
         >
           {UI_THEME_STYLE_OPTIONS.map((opt) => (
