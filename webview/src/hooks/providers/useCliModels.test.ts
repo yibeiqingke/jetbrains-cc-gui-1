@@ -39,6 +39,17 @@ describe('useCliModels', () => {
     expect(sendBridgeEventMock).toHaveBeenCalledWith('get_cli_models', 'grok');
   });
 
+  it('fetches the CodeBuddy models.json catalog when CodeBuddy is active', () => {
+    renderHook(() => useCliModels('codebuddy'));
+    expect(sendBridgeEventMock).toHaveBeenCalledWith('get_cli_models', 'codebuddy');
+  });
+
+  it('keeps CodeBuddy empty until its configured catalog arrives', () => {
+    const { result } = renderHook(() => useCliModels('codebuddy'));
+    expect(result.current.cliModels).toEqual([]);
+    expect(result.current.cliModelsLoading).toBe(true);
+  });
+
   it('does not fetch for claude', () => {
     renderHook(() => useCliModels('claude'));
     expect(sendBridgeEventMock).not.toHaveBeenCalled();

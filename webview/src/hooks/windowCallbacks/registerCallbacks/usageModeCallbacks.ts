@@ -27,8 +27,10 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
     setCurrentProvider,
     setClaudePermissionMode,
     setCodexPermissionMode,
+    setCodeBuddyPermissionMode,
     setSelectedClaudeModel,
     setSelectedCodexModel,
+    setSelectedCodeBuddyModel,
     setLongContextEnabled,
     setReasoningEffort,
     setCodexFastMode,
@@ -90,6 +92,8 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
       setPermissionMode((prev) => (prev === nextMode ? prev : nextMode));
       if (activeProvider === 'codex') {
         setCodexPermissionMode((prev) => (prev === nextMode ? prev : nextMode));
+      } else if (activeProvider === 'codebuddy') {
+        setCodeBuddyPermissionMode((prev) => (prev === nextMode ? prev : nextMode));
       } else {
         setClaudePermissionMode((prev) => (prev === nextMode ? prev : nextMode));
       }
@@ -105,6 +109,8 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
       setSelectedClaudeModel(normalizeClaudeModelId(modelId));
     } else if (provider === 'codex') {
       setSelectedCodexModel(modelId);
+    } else if (provider === 'codebuddy') {
+      setSelectedCodeBuddyModel(modelId);
     }
   };
 
@@ -113,6 +119,8 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
       setSelectedClaudeModel(normalizeClaudeModelId(modelId));
     } else if (provider === 'codex') {
       setSelectedCodexModel(modelId);
+    } else if (provider === 'codebuddy') {
+      setSelectedCodeBuddyModel(modelId);
     }
   };
 
@@ -120,7 +128,7 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
     try {
       const state = JSON.parse(json) as Record<string, unknown>;
       const provider = state.provider;
-      if (provider !== 'claude' && provider !== 'codex') {
+      if (provider !== 'claude' && provider !== 'codex' && provider !== 'codebuddy') {
         throw new Error('invalid provider');
       }
 
@@ -133,6 +141,8 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
         if (provider === 'claude') {
           setSelectedClaudeModel(normalizeClaudeModelId(strip1MContextSuffix(state.model)));
           setLongContextEnabled(has1MContextSuffix(state.model));
+        } else if (provider === 'codebuddy') {
+          setSelectedCodeBuddyModel(state.model);
         } else {
           setSelectedCodexModel(state.model);
         }

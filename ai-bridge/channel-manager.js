@@ -32,6 +32,7 @@
 import { readStdinData } from './utils/stdin-utils.js';
 import { handleClaudeCommand } from './channels/claude-channel.js';
 import { handleCodexCommand } from './channels/codex-channel.js';
+import { handleCodeBuddyCommand } from './channels/codebuddy-channel.js';
 import { handleGrokCommand } from './channels/grok-channel.js';
 import { handleKimiCommand } from './channels/kimi-channel.js';
 import { handleOpenCodeCommand } from './channels/opencode-channel.js';

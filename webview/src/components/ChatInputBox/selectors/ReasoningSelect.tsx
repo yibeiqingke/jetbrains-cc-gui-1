@@ -7,6 +7,7 @@ import {
   XHIGH_EFFORT_CLAUDE_MODELS,
   codexModelSupportsMaxEffort,
   type ReasoningEffort,
+  type ModelInfo,
 } from '../types';
 import { useDropdownPosition } from '../../../hooks/useDropdownPosition';
 
@@ -28,6 +29,7 @@ interface ReasoningSelectProps {
   disabled?: boolean;
   selectedModel?: string;
   currentProvider?: string;
+  selectedModelInfo?: ModelInfo;
 }
 
 /**
@@ -39,7 +41,7 @@ interface ReasoningSelectProps {
  * - Claude Sonnet 5, Sonnet 4.7, Opus 4.6, and Sonnet 4.6: low/medium/high/max
  * - Claude Haiku 4.5 and legacy models: hidden (no adaptive thinking support)
  */
-export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, currentProvider }: ReasoningSelectProps) => {
+export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, currentProvider, selectedModelInfo }: ReasoningSelectProps) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -50,8 +52,13 @@ export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, curr
     preferredAlignment: 'right',
   });
 
-  // Determine visibility: for Claude, hide if model doesn't support adaptive thinking
-  const isVisible = currentProvider !== 'claude' || !selectedModel || EFFORT_SUPPORTED_CLAUDE_MODELS.has(selectedModel);
+  // Determine visibility: hide when the selected model reports no reasoning support.
+  const isVisible = (
+    currentProvider === 'claude'
+      ? (!selectedModel || EFFORT_SUPPORTED_CLAUDE_MODELS.has(selectedModel))
+      : currentProvider === 'codebuddy'
+        ? selectedModelInfo?.reasoningSupported !== false
+        : true
 
   // Build the list of available levels for the current model
   const availableLevels = REASONING_LEVELS.filter(level => {
@@ -60,6 +67,10 @@ export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, curr
       return level.id === 'low' || level.id === 'medium' || level.id === 'high';
     }
     if (currentProvider === 'codex') {
+    if (currentProvider === 'codebuddy') {
+      return !selectedModelInfo?.supportedEfforts
+        || selectedModelInfo.supportedEfforts.includes(level.id);
+    }
       return level.id !== 'max' || (selectedModel !== undefined && codexModelSupportsMaxEffort(selectedModel));
     }
     if (currentProvider !== 'claude') {

@@ -105,6 +105,10 @@ export const ModeSelect = ({ value, onChange, provider }: ModeSelectProps) => {
       const info = modeOptions.find((mode) => mode.id === modeId);
       if (field === 'label') return info?.label ?? modeId;
       return info?.[field] ?? info?.description ?? '';
+    if (provider === 'codebuddy' && modeId === 'bypassPermissions') {
+      const codeBuddyKey = `codebuddyModes.${modeId}.${field}`;
+      const fallbackKey = `modes.${modeId}.${field}`;
+      return t(codeBuddyKey, { defaultValue: t(fallbackKey) });
     }
 
     return t(`modes.${modeId}.${field}`);

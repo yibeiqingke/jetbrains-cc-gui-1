@@ -166,7 +166,9 @@ const App = () => {
     usagePercentage, usageUsedTokens, usageMaxTokens,
     setPermissionMode, setCurrentProvider,
     setClaudePermissionMode, setCodexPermissionMode,
+    setCodeBuddyPermissionMode,
     setSelectedClaudeModel, setSelectedCodexModel,
+    setSelectedCodeBuddyModel,
     setSelectedGrokModel, setSelectedKimiModel,
     setSelectedOpenCodeModel, setSelectedPiModel, setSelectedDshModel,
     setSelectedOmpModel, setOmpPermissionMode,
@@ -354,6 +356,9 @@ const App = () => {
         } else if (provider === 'dsh') {
           setSelectedDshModel(model);
           sendBridgeEvent('set_model', model);
+        } else if (provider === 'codebuddy') {
+          setSelectedCodeBuddyModel(model);
+          sendBridgeEvent('set_model', model);
         } else {
           // claude (or unrecognized): apply the claude model directly —
           // handleModelSelect reads currentProvider from a stale closure
@@ -378,7 +383,8 @@ const App = () => {
     setIsThinking, setStreamingActive, setHistoryData,
     setCurrentSessionId, setUsagePercentage, setUsageUsedTokens, setUsageMaxTokens,
     setPermissionMode, setCurrentProvider, setClaudePermissionMode, setCodexPermissionMode,
-    setSelectedClaudeModel, setSelectedCodexModel,
+    setCodeBuddyPermissionMode,
+    setSelectedClaudeModel, setSelectedCodexModel, setSelectedCodeBuddyModel,
     setLongContextEnabled, setReasoningEffort, setCodexFastMode,
     setProviderConfigVersion, setActiveProviderConfig,
     setClaudeSettingsAlwaysThinkingEnabled, setStreamingEnabledSetting,

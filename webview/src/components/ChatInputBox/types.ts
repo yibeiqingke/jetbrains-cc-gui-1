@@ -276,6 +276,14 @@ export interface ModelInfo {
   id: string;
   label: string;
   description?: string;
+  /** Provider-reported usage multiplier, e.g. CodeBuddy's "x0.79 credits". */
+  credits?: string;
+  /** Effort values reported by the provider for this model. */
+  supportedEfforts?: ReasoningEffort[];
+  /** Provider-level indication that the model supports reasoning controls. */
+  reasoningSupported?: boolean;
+  /** Provider-reported default effort. */
+  defaultEffort?: ReasoningEffort;
 }
 
 /**
@@ -582,6 +590,10 @@ export const isValidDshPreset = (value: unknown): value is DshPreset =>
   typeof value === 'string'
   && (DSH_PRESETS.some((preset) => preset.id === value)
     || getUserDshPresetOptions().some((preset) => preset.id === value));
+/** CodeBuddy Agent SDK models. The backend supplies the catalog at runtime. */
+export const CODEBUDDY_DEFAULT_MODEL_ID = '';
+export const CODEBUDDY_MODELS: ModelInfo[] = [];
+
 
 /**
  * Available models (backward compatibility)
@@ -612,6 +624,7 @@ export const AVAILABLE_PROVIDERS: ProviderInfo[] = [
   { id: 'pi', label: 'PI CLI', icon: 'codicon-terminal', enabled: true, beta: true },
   { id: 'omp', label: 'OMP CLI', icon: 'codicon-terminal', enabled: true, beta: true },
   { id: 'dsh', label: 'DeepSeek Harness', icon: 'codicon-terminal', enabled: true, beta: true },
+  { id: 'codebuddy', label: 'CodeBuddy', icon: 'codicon-terminal', enabled: true, beta: true },
 ];
 
 /**
@@ -662,7 +675,7 @@ export function codexModelSupportsMaxEffort(modelId: string): boolean {
  * Claude API values: low, medium, high, xhigh, max
  * Codex API values: low, medium, high, xhigh; GPT-5.6 also supports max
  */
-export type ReasoningEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+export type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 /**
  * Codex execution speed mode.
@@ -684,6 +697,12 @@ export interface ReasoningInfo {
  * Available reasoning levels
  */
 export const REASONING_LEVELS: ReasoningInfo[] = [
+  {
+    id: 'minimal',
+    label: 'Minimal',
+    icon: 'codicon-debug-step-over',
+    description: 'Minimal reasoning for the fastest responses',
+  },
   {
     id: 'low',
     label: 'Low',

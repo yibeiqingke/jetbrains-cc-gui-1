@@ -1,0 +1,144 @@
+import { loadCodeBuddySdk, requireSdk } from '../../utils/sdk-loader.js';
+import { resolveCodeBuddyCliPath } from '../../utils/cli-path.js';
+
+const MODEL_DISCOVERY_TIMEOUT_MS = 15_000;
+const VALID_REASONING_EFFORTS = new Set(['minimal', 'low', 'medium', 'high', 'xhigh', 'max']);
+
+function configuredModels() {
+  return (process.env.CODEBUDDY_MODELS || '')
+    .split(',')
+    .map(id => id.trim())
+    .filter(Boolean)
+    .map(id => ({ id, label: id }));
+}
+
+function emit(payload) {
+  console.log(JSON.stringify({ provider: 'codebuddy', ...payload }));
+}
+
+function normalizeReasoningEfforts(model) {
+  const reasoning = model?.reasoning;
+  const raw = model?.supportedEfforts
+    || reasoning?.supportedEfforts
+    || reasoning?.efforts;
+  if (!Array.isArray(raw)) return undefined;
+  const efforts = raw
+    .map(effort => typeof effort === 'string' ? effort : effort?.id)
+    .map(effort => typeof effort === 'string' ? effort.trim().toLowerCase() : '')
+    .filter(effort => VALID_REASONING_EFFORTS.has(effort));
+  return [...new Set(efforts)];
+}
+
+export function normalizeCodeBuddyModels(rawModels) {
+  if (!Array.isArray(rawModels)) return [];
+  return rawModels.map(model => {
+    const supportedEfforts = normalizeReasoningEfforts(model);
+    const reasoning = model?.reasoning;
+    return {
+      id: model?.modelId || model?.id,
+      label: model?.name || model?.label || model?.modelId || model?.id,
+      description: model?.description,
+      credits: model?.credits,
+      ...(typeof model?.supportsReasoning === 'boolean'
+        ? { reasoningSupported: model.supportsReasoning }
+        : {}),
+      ...(supportedEfforts?.length ? { supportedEfforts } : {}),
+      ...((reasoning?.defaultEffort || reasoning?.effort)
+        ? { defaultEffort: reasoning.defaultEffort || reasoning.effort }
+        : {}),
+    };
+  }).filter(model => typeof model.id === 'string' && model.id.trim());
+}
+
+/** Load the model catalog exposed by the CodeBuddy Agent SDK. */
+export async function listModels() {
+  let sessionHandle;
+  let queryHandle;
+  let discoveryTimer;
+  const abortController = new AbortController();
+  try {
+    requireSdk('codebuddy');
+    const sdk = await loadCodeBuddySdk();
+    const createSession = sdk?.unstable_v2_createSession
+      || sdk?.default?.unstable_v2_createSession;
+    const query = sdk?.query
+      || (typeof sdk?.default === 'function' ? sdk.default : sdk?.default?.query);
+    const codeBuddyCliPath = resolveCodeBuddyCliPath();
+    const options = {
+      cwd: process.cwd(),
+      permissionMode: 'default',
+      persistSession: false,
+      settingSources: ['user', 'project', 'local'],
+      ...(codeBuddyCliPath ? { pathToCodebuddyCode: codeBuddyCliPath } : {}),
+    };
+    const timeout = new Promise((_, reject) => {
+      discoveryTimer = setTimeout(() => {
+        abortController.abort();
+        reject(new Error('CodeBuddy model discovery timed out. Please check CodeBuddy authentication.'));
+      }, MODEL_DISCOVERY_TIMEOUT_MS);
+    });
+
+    let discoveryPromise;
+    if (typeof createSession === 'function') {
+      sessionHandle = createSession(options);
+      const getModels = sessionHandle?.getAvailableModelsRaw || sessionHandle?.getAvailableModels;
+      if (typeof getModels !== 'function') {
+        throw new Error('CodeBuddy Agent SDK model discovery is not available.');
+      }
+      discoveryPromise = getModels.call(sessionHandle);
+    } else if (typeof query === 'function') {
+      queryHandle = query({ prompt: '', options: { ...options, abortController } });
+      const getModels = queryHandle?.getAvailableModels || queryHandle?.supportedModels;
+      if (typeof getModels !== 'function') {
+        throw new Error('CodeBuddy Agent SDK model discovery is not available.');
+      }
+      discoveryPromise = (async () => {
+        if (typeof queryHandle.connect === 'function') await queryHandle.connect();
+        return getModels.call(queryHandle);
+      })();
+    } else {
+      throw new Error('CodeBuddy Agent SDK model API not available. Please reinstall dependencies.');
+    }
+
+    const discovered = await Promise.race([discoveryPromise, timeout]);
+    const models = normalizeCodeBuddyModels(discovered);
+    const configured = configuredModels();
+    const resolvedModels = models.length > 0 ? models : (configured.length > 0 ? configured : []);
+    const configuredDefault = process.env.CODEBUDDY_DEFAULT_MODEL?.trim();
+    const defaultModel = resolvedModels.some(model => model.id === configuredDefault)
+      ? configuredDefault
+      : resolvedModels[0]?.id || null;
+    emit({ success: true, defaultModel, models: resolvedModels });
+  } catch (error) {
+    const configured = configuredModels();
+    const configuredDefault = process.env.CODEBUDDY_DEFAULT_MODEL?.trim();
+    const defaultModel = configured.some(model => model.id === configuredDefault)
+      ? configuredDefault
+      : configured[0]?.id || null;
+    emit({
+      success: false,
+      defaultModel,
+      models: configured,
+      error: error?.message || String(error),
+    });
+  } finally {
+    if (discoveryTimer) clearTimeout(discoveryTimer);
+    if (sessionHandle && typeof sessionHandle.close === 'function') {
+      try {
+        sessionHandle.close();
+      } catch {
+        // The session may already have closed after model discovery.
+      }
+    }
+    if (queryHandle && typeof queryHandle.interrupt === 'function') {
+      try {
+        await Promise.race([
+          queryHandle.interrupt(),
+          new Promise(resolve => setTimeout(resolve, 2_000)),
+        ]);
+      } catch {
+        // The SDK may already have closed the query after model discovery.
+      }
+    }
+  }
+}

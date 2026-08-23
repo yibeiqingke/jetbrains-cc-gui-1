@@ -5,6 +5,7 @@
 
 const STDIN_ENV_BY_PROVIDER = {
   codex: 'CODEX_USE_STDIN',
+  codebuddy: 'CODEBUDDY_USE_STDIN',
   grok: 'GROK_USE_STDIN',
   kimi: 'KIMI_USE_STDIN',
   opencode: 'OPENCODE_USE_STDIN',

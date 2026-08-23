@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { sendBridgeEvent } from '../../utils/bridge';
-import type { ModelInfo } from '../../components/ChatInputBox/types';
-import { CODEX_MODELS, DSH_MODELS, GROK_MODELS, KIMI_MODELS, OMP_MODELS, OMP_ROLE_MODELS, OPENCODE_MODELS, PI_MODELS } from '../../components/ChatInputBox/types';
+import type { ModelInfo, ReasoningEffort } from '../../components/ChatInputBox/types';
+import { CODEBUDDY_MODELS, CODEX_MODELS, DSH_MODELS, GROK_MODELS, KIMI_MODELS, OMP_MODELS, OMP_ROLE_MODELS, OPENCODE_MODELS, PI_MODELS } from '../../components/ChatInputBox/types';
 import { isCliOnlyProvider } from './cliProviders';
 import { subscribeActiveCodexProvider } from '../../utils/runtimeProviderCapabilities';
 
@@ -55,6 +55,7 @@ function fallbackModels(providerId: string): ModelInfo[] {
   if (providerId === 'pi') return PI_MODELS;
   if (providerId === 'omp') return OMP_MODELS;
   if (providerId === 'dsh') return DSH_MODELS;
+  if (providerId === 'codebuddy') return CODEBUDDY_MODELS;
   if (providerId === 'codex') return CODEX_MODELS;
   return [];
 }
@@ -65,7 +66,7 @@ function fallbackModels(providerId: string): ModelInfo[] {
  * from ~/.codex/config.toml + model_catalog_json, same as the codex CLI picker.
  */
 function supportsDynamicModels(providerId: string): boolean {
-  if (providerId === 'codex') return true;
+  if (providerId === 'codex' || providerId === 'codebuddy') return true;
   return isCliOnlyProvider(providerId);
 }
 
@@ -83,7 +84,30 @@ function normalizeModels(raw: unknown): ModelInfo[] {
       ? row.label.trim()
       : id;
     const description = typeof row.description === 'string' ? row.description : undefined;
-    out.push({ id, label, description });
+    const credits = typeof row.credits === 'string' && row.credits.trim()
+      ? row.credits.trim()
+      : undefined;
+    const supportedEfforts = Array.isArray(row.supportedEfforts)
+      ? row.supportedEfforts.filter((effort): effort is ReasoningEffort =>
+        typeof effort === 'string'
+        && ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'].includes(effort))
+      : undefined;
+    const reasoningSupported = typeof row.reasoningSupported === 'boolean'
+      ? row.reasoningSupported
+      : undefined;
+    const defaultEffort = typeof row.defaultEffort === 'string'
+      && ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'].includes(row.defaultEffort)
+      ? row.defaultEffort as ModelInfo['defaultEffort']
+      : undefined;
+    out.push({
+      id,
+      label,
+      description,
+      credits,
+      ...(supportedEfforts?.length ? { supportedEfforts } : {}),
+      ...(reasoningSupported !== undefined ? { reasoningSupported } : {}),
+      ...(defaultEffort ? { defaultEffort } : {}),
+    });
   }
   return out;
 }

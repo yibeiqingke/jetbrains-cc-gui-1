@@ -12,6 +12,7 @@ import {
   DSH_DEFAULT_MODEL_ID,
   DSH_PRESET_NONE,
   isValidDshPreset,
+  CODEBUDDY_DEFAULT_MODEL_ID,
   isValidPermissionMode,
   normalizeClaudeModelId,
   apply1MContextSuffix,
@@ -61,12 +62,14 @@ export interface UseModelStatePersistenceOptions {
   setSelectedPiModel: (value: string) => void;
   setSelectedOmpModel: (value: string) => void;
   setSelectedDshModel: (value: string) => void;
+  setSelectedCodeBuddyModel: (value: string) => void;
   setGrokPermissionMode: (value: PermissionMode) => void;
   setKimiPermissionMode: (value: PermissionMode) => void;
   setOpenCodePermissionMode: (value: PermissionMode) => void;
   setPiPermissionMode: (value: PermissionMode) => void;
   setOmpPermissionMode: (value: PermissionMode) => void;
   setDshPermissionMode: (value: PermissionMode) => void;
+  setCodeBuddyPermissionMode: (value: PermissionMode) => void;
   setPermissionMode: (value: PermissionMode) => void;
   setLongContextEnabled: (value: boolean) => void;
   setReasoningEffort: (value: ReasoningEffort) => void;
@@ -84,12 +87,14 @@ export interface UseModelStatePersistenceOptions {
   selectedPiModel: string;
   selectedOmpModel: string;
   selectedDshModel: string;
+  selectedCodeBuddyModel: string;
   grokPermissionMode: PermissionMode;
   kimiPermissionMode: PermissionMode;
   openCodePermissionMode: PermissionMode;
   piPermissionMode: PermissionMode;
   ompPermissionMode: PermissionMode;
   dshPermissionMode: PermissionMode;
+  codeBuddyPermissionMode: PermissionMode;
   longContextEnabled: boolean;
   reasoningEffort: ReasoningEffort;
   codexFastMode: CodexFastMode;
@@ -119,12 +124,14 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
     setSelectedPiModel,
     setSelectedOmpModel,
     setSelectedDshModel,
+    setSelectedCodeBuddyModel,
     setGrokPermissionMode,
     setKimiPermissionMode,
     setOpenCodePermissionMode,
     setPiPermissionMode,
     setOmpPermissionMode,
     setDshPermissionMode,
+    setCodeBuddyPermissionMode,
     setPermissionMode,
     setLongContextEnabled,
     setReasoningEffort,
@@ -141,12 +148,14 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
     selectedPiModel,
     selectedOmpModel,
     selectedDshModel,
+    selectedCodeBuddyModel,
     grokPermissionMode,
     kimiPermissionMode,
     openCodePermissionMode,
     piPermissionMode,
     ompPermissionMode,
     dshPermissionMode,
+    codeBuddyPermissionMode,
     longContextEnabled,
     reasoningEffort,
     codexFastMode,
@@ -187,12 +196,14 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
       let restoredPiModel = PI_DEFAULT_MODEL_ID;
       let restoredOmpModel = OMP_DEFAULT_MODEL_ID;
       let restoredDshModel = DSH_DEFAULT_MODEL_ID;
+      let restoredCodeBuddyModel = CODEBUDDY_DEFAULT_MODEL_ID;
       let restoredGrokPermissionMode: PermissionMode = 'default';
       let restoredKimiPermissionMode: PermissionMode = 'default';
       let restoredOpenCodePermissionMode: PermissionMode = 'default';
       let restoredPiPermissionMode: PermissionMode = 'default';
       let restoredOmpPermissionMode: PermissionMode = 'default';
       let restoredDshPermissionMode: PermissionMode = 'default';
+      let restoredCodeBuddyPermissionMode: PermissionMode = 'default';
       let restoredLongContextEnabled = true;
       let restoredCodexFastMode: CodexFastMode = 'normal';
       let restoredDshPreset = DSH_PRESET_NONE;
@@ -253,6 +264,10 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
         restoredDshModel = id;
         setSelectedDshModel(id);
       });
+      const applyCodeBuddyModel = makeCliModelApplier((id) => {
+        restoredCodeBuddyModel = id;
+        setSelectedCodeBuddyModel(id);
+      });
 
       if (saved) {
         const state = JSON.parse(saved);
@@ -291,6 +306,9 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
         }
         if (isValidPermissionMode(state.dshPermissionMode)) {
           restoredDshPermissionMode = normalizeCliPermissionMode(state.dshPermissionMode);
+        }
+        if (isValidPermissionMode(state.codeBuddyPermissionMode)) {
+          restoredCodeBuddyPermissionMode = state.codeBuddyPermissionMode;
         }
 
         if (typeof state.longContextEnabled === 'boolean') {
@@ -348,6 +366,10 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
           ? initialTabModel
           : state.dshModel;
         applyDshModel(dshModelCandidate);
+        const codeBuddyModelCandidate = hasBackendModel && restoredProvider === 'codebuddy'
+          ? initialTabModel
+          : state.codeBuddyModel;
+        applyCodeBuddyModel(codeBuddyModelCandidate);
       } else if (hasBackendProvider) {
         // No localStorage yet (fresh user) but backend supplied a provider:
         // honor it so the tab starts with the right provider.
@@ -362,6 +384,7 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
           else if (initialTabProvider === 'pi') applyPiModel(initialTabModel);
           else if (initialTabProvider === 'omp') applyOmpModel(initialTabModel);
           else if (initialTabProvider === 'dsh') applyDshModel(initialTabModel);
+          else if (initialTabProvider === 'codebuddy') applyCodeBuddyModel(initialTabModel);
         }
       }
 
@@ -401,6 +424,7 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
       setPiPermissionMode(restoredPiPermissionMode);
       setOmpPermissionMode(restoredOmpPermissionMode);
       setDshPermissionMode(restoredDshPermissionMode);
+      setCodeBuddyPermissionMode(restoredCodeBuddyPermissionMode);
       setPermissionMode(initialPermissionMode);
 
       let syncRetryCount = 0;
@@ -493,12 +517,14 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
           piModel: selectedPiModel,
           ompModel: selectedOmpModel,
           dshModel: selectedDshModel,
+          codeBuddyModel: selectedCodeBuddyModel,
           grokPermissionMode,
           kimiPermissionMode,
           openCodePermissionMode,
           piPermissionMode,
           ompPermissionMode,
           dshPermissionMode,
+          codeBuddyPermissionMode,
           longContextEnabled,
           reasoningEffort,
           codexFastMode,
@@ -527,12 +553,14 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
     selectedPiModel,
     selectedOmpModel,
     selectedDshModel,
+    selectedCodeBuddyModel,
     grokPermissionMode,
     kimiPermissionMode,
     openCodePermissionMode,
     piPermissionMode,
     ompPermissionMode,
     dshPermissionMode,
+    codeBuddyPermissionMode,
     longContextEnabled,
     reasoningEffort,
     codexFastMode,

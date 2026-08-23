@@ -11,6 +11,7 @@ const ADD_ICON_STYLE: React.CSSProperties = { marginRight: '4px' };
 const CONTEXT_WINDOW_TOKENS_PER_K = 1_000;
 const MAX_CONTEXT_WINDOW_TOKENS = 2_147_483_647;
 const MAX_CONTEXT_WINDOW_K = Math.floor(MAX_CONTEXT_WINDOW_TOKENS / CONTEXT_WINDOW_TOKENS_PER_K);
+const CODEBUDDY_MODEL_TOKEN_MAX = 2_147_483_647;
 
 type PricingFieldKey = keyof ModelPricing;
 
@@ -65,6 +66,8 @@ interface CustomModelDialogProps {
   onClose: () => void;
   /** Enables Codex-only context-window metadata editing. */
   contextWindowEnabled?: boolean;
+  /** Enables CodeBuddy models.json LanguageModel fields. */
+  codeBuddyConfigEnabled?: boolean;
   /** If provided, opens in add-model mode directly */
   initialAddMode?: boolean;
 }
@@ -138,6 +141,39 @@ function buildPricing(inputs: Record<PricingFieldKey, string>): ModelPricing | u
   return hasPricing(pricing) ? pricing : undefined;
 }
 
+function parseOptionalInteger(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isSafeInteger(parsed) && parsed >= 1 && parsed <= CODEBUDDY_MODEL_TOKEN_MAX
+    ? parsed
+    : undefined;
+}
+
+function parseOptionalTemperature(value: string): number | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 2 ? parsed : undefined;
+}
+
+function parseRelatedModels(value: string): Record<string, string> | undefined {
+  if (!value.trim()) return undefined;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
+    const entries = Object.entries(parsed as Record<string, unknown>)
+      .filter(([, target]) => typeof target === 'string' && target.trim());
+    return entries.length > 0 ? Object.fromEntries(entries) as Record<string, string> : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function formatRelatedModels(value?: Record<string, string>): string {
+  return value ? JSON.stringify(value, null, 2) : '';
+}
+
 /**
  * Custom Model Management Dialog
  * Full CRUD for plugin-level custom models in a modal dialog
@@ -150,6 +186,7 @@ export function CustomModelDialog({
   onConfiguredModelPricingChange,
   onClose,
   contextWindowEnabled = false,
+  codeBuddyConfigEnabled = false,
   initialAddMode = false,
 }: CustomModelDialogProps) {
   const { t } = useTranslation();
@@ -161,11 +198,22 @@ export function CustomModelDialog({
   const [newModelId, setNewModelId] = useState('');
   const [newModelLabel, setNewModelLabel] = useState('');
   const [newModelDesc, setNewModelDesc] = useState('');
+  const [newVendor, setNewVendor] = useState('');
+  const [newApiKey, setNewApiKey] = useState('');
+  const [newMaxInputTokens, setNewMaxInputTokens] = useState('');
+  const [newMaxOutputTokens, setNewMaxOutputTokens] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [newTemperature, setNewTemperature] = useState('');
+  const [newSupportsToolCall, setNewSupportsToolCall] = useState(false);
+  const [newSupportsImages, setNewSupportsImages] = useState(false);
+  const [newSupportsReasoning, setNewSupportsReasoning] = useState(false);
+  const [newRelatedModels, setNewRelatedModels] = useState('');
   const [newContextWindowK, setNewContextWindowK] = useState('');
   const [newPricingInputs, setNewPricingInputs] = useState<Record<PricingFieldKey, string>>({ ...EMPTY_PRICING_INPUTS });
   const [modelIdError, setModelIdError] = useState<string | null>(null);
   const [contextWindowError, setContextWindowError] = useState<string | null>(null);
   const [pricingError, setPricingError] = useState<string | null>(null);
+  const [codeBuddyConfigError, setCodeBuddyConfigError] = useState<string | null>(null);
   // Pricing is optional — collapsed by default to keep the form lightweight.
   const [pricingCollapsed, setPricingCollapsed] = useState(true);
 
@@ -176,11 +224,22 @@ export function CustomModelDialog({
     setNewModelId('');
     setNewModelLabel('');
     setNewModelDesc('');
+    setNewVendor('');
+    setNewApiKey('');
+    setNewMaxInputTokens('');
+    setNewMaxOutputTokens('');
+    setNewUrl('');
+    setNewTemperature('');
+    setNewSupportsToolCall(false);
+    setNewSupportsImages(false);
+    setNewSupportsReasoning(false);
+    setNewRelatedModels('');
     setNewContextWindowK('');
     setNewPricingInputs({ ...EMPTY_PRICING_INPUTS });
     setModelIdError(null);
     setContextWindowError(null);
     setPricingError(null);
+    setCodeBuddyConfigError(null);
     setPricingCollapsed(true);
   }, []);
 
@@ -252,6 +311,20 @@ export function CustomModelDialog({
     });
   }, [newContextWindowK, t]);
 
+  const validateCodeBuddyConfig = useCallback((): string | null => {
+    if (!codeBuddyConfigEnabled) return null;
+    const invalidInteger = [newMaxInputTokens, newMaxOutputTokens].some((value) =>
+      value.trim() !== '' && parseOptionalInteger(value) === undefined);
+    const invalidTemperature = newTemperature.trim() !== '' && parseOptionalTemperature(newTemperature) === undefined;
+    const invalidRelatedModels = newRelatedModels.trim() !== '' && parseRelatedModels(newRelatedModels) === undefined;
+    if (invalidInteger || invalidTemperature || invalidRelatedModels) {
+      return t('settings.codebuddyProvider.invalidModelConfig', {
+        defaultValue: 'Check token limits, temperature (0–2), and relatedModels JSON.',
+      });
+    }
+    return null;
+  }, [codeBuddyConfigEnabled, newMaxInputTokens, newMaxOutputTokens, newRelatedModels, newTemperature, t]);
+
   const buildModelFromForm = useCallback((): CodexCustomModel => {
     const sanitizedId = sanitizeInput(newModelId).trim();
     const sanitizedLabel = sanitizeInput(newModelLabel).trim();
@@ -264,12 +337,30 @@ export function CustomModelDialog({
       description: sanitizedDescription || undefined,
     };
 
+    if (codeBuddyConfigEnabled) {
+      const maxInputTokens = parseOptionalInteger(newMaxInputTokens);
+      const maxOutputTokens = parseOptionalInteger(newMaxOutputTokens);
+      const temperature = parseOptionalTemperature(newTemperature);
+      Object.assign(model, {
+        vendor: newVendor.trim() || undefined,
+        apiKey: newApiKey.trim() || undefined,
+        maxInputTokens,
+        maxOutputTokens,
+        url: newUrl.trim() || undefined,
+        temperature,
+        supportsToolCall: newSupportsToolCall,
+        supportsImages: newSupportsImages,
+        supportsReasoning: newSupportsReasoning,
+        relatedModels: parseRelatedModels(newRelatedModels),
+      });
+    }
+
     if (contextWindowEnabled && contextWindowTokens !== undefined) {
       model.contextWindowTokens = contextWindowTokens;
     }
 
     return pricing ? { ...model, pricing } : model;
-  }, [contextWindowEnabled, newModelId, newModelLabel, newModelDesc, newContextWindowK, newPricingInputs]);
+  }, [codeBuddyConfigEnabled, contextWindowEnabled, newApiKey, newContextWindowK, newMaxInputTokens, newMaxOutputTokens, newModelDesc, newModelId, newModelLabel, newPricingInputs, newRelatedModels, newSupportsImages, newSupportsReasoning, newSupportsToolCall, newTemperature, newUrl, newVendor]);
 
   const validateForm = useCallback((): boolean => {
     if (editingConfiguredModel) {
@@ -278,11 +369,13 @@ export function CustomModelDialog({
         setModelIdError(null);
         setContextWindowError(null);
         setPricingError(priceError);
+        setCodeBuddyConfigError(null);
         return false;
       }
       setModelIdError(null);
       setContextWindowError(null);
       setPricingError(null);
+      setCodeBuddyConfigError(null);
       return true;
     }
 
@@ -299,6 +392,16 @@ export function CustomModelDialog({
       setModelIdError(null);
       setContextWindowError(contextError);
       setPricingError(null);
+      setCodeBuddyConfigError(null);
+      return false;
+    }
+
+    const codeBuddyError = validateCodeBuddyConfig();
+    if (codeBuddyError) {
+      setModelIdError(null);
+      setContextWindowError(null);
+      setPricingError(null);
+      setCodeBuddyConfigError(codeBuddyError);
       return false;
     }
 
@@ -313,8 +416,9 @@ export function CustomModelDialog({
     setModelIdError(null);
     setContextWindowError(null);
     setPricingError(null);
+    setCodeBuddyConfigError(null);
     return true;
-  }, [contextWindowEnabled, editingConfiguredModel, newModelId, validateContextWindowInput, validateModelId, validatePricingInputs]);
+  }, [contextWindowEnabled, editingConfiguredModel, newModelId, validateCodeBuddyConfig, validateContextWindowInput, validateModelId, validatePricingInputs]);
 
   const handleAddModel = useCallback(() => {
     if (!validateForm()) {
@@ -347,6 +451,16 @@ export function CustomModelDialog({
     setNewModelId(model.id);
     setNewModelLabel(model.label);
     setNewModelDesc(model.description || '');
+    setNewVendor(model.vendor || '');
+    setNewApiKey(model.apiKey || '');
+    setNewMaxInputTokens(model.maxInputTokens === undefined ? '' : String(model.maxInputTokens));
+    setNewMaxOutputTokens(model.maxOutputTokens === undefined ? '' : String(model.maxOutputTokens));
+    setNewUrl(model.url || '');
+    setNewTemperature(model.temperature === undefined ? '' : String(model.temperature));
+    setNewSupportsToolCall(model.supportsToolCall ?? false);
+    setNewSupportsImages(model.supportsImages ?? false);
+    setNewSupportsReasoning(model.supportsReasoning ?? false);
+    setNewRelatedModels(formatRelatedModels(model.relatedModels));
     setNewContextWindowK(!contextWindowEnabled || model.contextWindowTokens === undefined
       ? ''
       : String(model.contextWindowTokens / CONTEXT_WINDOW_TOKENS_PER_K));
@@ -362,6 +476,7 @@ export function CustomModelDialog({
     setModelIdError(null);
     setContextWindowError(null);
     setPricingError(null);
+    setCodeBuddyConfigError(null);
   }, [contextWindowEnabled]);
 
   const handleEditConfiguredModelPricing = useCallback((model: CodexCustomModel) => {
@@ -444,6 +559,11 @@ export function CustomModelDialog({
                       {model.description && (
                         <div className={styles.modelItemDesc}>
                           {model.description}
+                        </div>
+                      )}
+                      {codeBuddyConfigEnabled && (model.vendor || model.url) && (
+                        <div className={styles.modelItemMetadata}>
+                          {[model.vendor, model.url].filter(Boolean).join(' · ')}
                         </div>
                       )}
                       <div className={styles.modelItemPricing}>
@@ -590,6 +710,81 @@ export function CustomModelDialog({
                 style={DESC_INPUT_STYLE}
                 disabled={isEditingConfiguredModel}
               />
+
+              {codeBuddyConfigEnabled && !isEditingConfiguredModel && (
+                <div className={styles.codeBuddyConfigSection}>
+                  <div className={styles.formRow}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder={t('settings.codebuddyProvider.vendorPlaceholder', { defaultValue: 'Vendor' })}
+                      value={newVendor}
+                      onChange={(e) => setNewVendor(e.target.value)}
+                    />
+                    <input
+                      type="password"
+                      className="form-input"
+                      placeholder={t('settings.codebuddyProvider.apiKeyPlaceholder', { defaultValue: 'API key or ${ENV_VAR}' })}
+                      value={newApiKey}
+                      onChange={(e) => setNewApiKey(e.target.value)}
+                    />
+                  </div>
+                  <input
+                    type="url"
+                    className="form-input"
+                    placeholder={t('settings.codebuddyProvider.urlPlaceholder', { defaultValue: 'https://.../v1/chat/completions' })}
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    style={DESC_INPUT_STYLE}
+                  />
+                  <div className={styles.formRow}>
+                    <input
+                      type="number"
+                      min="1"
+                      className="form-input"
+                      placeholder={t('settings.codebuddyProvider.maxInputTokensPlaceholder', { defaultValue: 'Max input tokens' })}
+                      value={newMaxInputTokens}
+                      onChange={(e) => setNewMaxInputTokens(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      className="form-input"
+                      placeholder={t('settings.codebuddyProvider.maxOutputTokensPlaceholder', { defaultValue: 'Max output tokens' })}
+                      value={newMaxOutputTokens}
+                      onChange={(e) => setNewMaxOutputTokens(e.target.value)}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      className="form-input"
+                      placeholder={t('settings.codebuddyProvider.temperaturePlaceholder', { defaultValue: 'Temperature (0–2)' })}
+                      value={newTemperature}
+                      onChange={(e) => setNewTemperature(e.target.value)}
+                    />
+                  </div>
+                  <textarea
+                    className="form-input"
+                    rows={2}
+                    placeholder={t('settings.codebuddyProvider.relatedModelsPlaceholder', { defaultValue: 'relatedModels JSON, e.g. {"lite":"fast-model"}' })}
+                    value={newRelatedModels}
+                    onChange={(e) => setNewRelatedModels(e.target.value)}
+                  />
+                  <div className={styles.checkboxGrid}>
+                    <label><input type="checkbox" checked={newSupportsToolCall} onChange={(e) => setNewSupportsToolCall(e.target.checked)} /> {t('settings.codebuddyProvider.supportsToolCall', { defaultValue: 'Supports tool calls' })}</label>
+                    <label><input type="checkbox" checked={newSupportsImages} onChange={(e) => setNewSupportsImages(e.target.checked)} /> {t('settings.codebuddyProvider.supportsImages', { defaultValue: 'Supports images' })}</label>
+                    <label><input type="checkbox" checked={newSupportsReasoning} onChange={(e) => setNewSupportsReasoning(e.target.checked)} /> {t('settings.codebuddyProvider.supportsReasoning', { defaultValue: 'Supports reasoning' })}</label>
+                  </div>
+                  <p className={styles.fieldHint}>
+                    {t('settings.codebuddyProvider.modelsJsonHint', { defaultValue: 'Saved directly to CodeBuddy models.json. API key may use ${ENV_VAR}.' })}
+                  </p>
+                  {codeBuddyConfigError && (
+                    <div className={styles.validationError} role="alert">{codeBuddyConfigError}</div>
+                  )}
+                </div>
+              )}
 
               {contextWindowEnabled && !isEditingConfiguredModel && (
                 <div className={styles.contextWindowField}>

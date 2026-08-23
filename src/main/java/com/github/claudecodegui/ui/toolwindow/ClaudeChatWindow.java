@@ -15,6 +15,7 @@ import com.github.claudecodegui.provider.kimi.KimiCliBridge;
 import com.github.claudecodegui.provider.opencode.OpenCodeCliBridge;
 import com.github.claudecodegui.provider.pi.PiCliBridge;
 import com.github.claudecodegui.provider.omp.OmpCliBridge;
+import com.github.claudecodegui.provider.codebuddy.CodeBuddySDKBridge;
 import com.github.claudecodegui.session.SessionProviderRouter;
 import com.github.claudecodegui.provider.common.DaemonBridge;
 import com.github.claudecodegui.provider.common.MessageCallback;
@@ -227,7 +228,7 @@ public class ClaudeChatWindow {
         // Grok uses GrokSDKBridge (persistent ACP / grok agent stdio), not MarkerCliBridge.
         this.cliBridges = SessionProviderRouter.registerCliBridges(
                 this.kimiCliBridge, this.openCodeCliBridge, this.piCliBridge,
-                this.ompCliBridge, new DshCliBridge());
+                this.ompCliBridge, new DshCliBridge(), new CodeBuddySDKBridge());
         this.settingsService = new CodemossSettingsService();
         this.htmlLoader = new HtmlLoader(getClass());
         this.mainPanel = new JPanel(new BorderLayout());

@@ -44,7 +44,7 @@ public class CliModelsHandler extends BaseMessageHandler {
     };
 
     private static final Set<String> SUPPORTED_PROVIDERS = Set.of(
-            "opencode", "kimi", "pi", "omp", "codex", "grok", "dsh"
+            "opencode", "kimi", "pi", "omp", "codex", "grok", "dsh", "codebuddy"
     );
 
     private final Gson gson = new Gson();
@@ -76,6 +76,11 @@ public class CliModelsHandler extends BaseMessageHandler {
 
     private void listModels(String provider) {
         try {
+            if ("codebuddy".equals(provider)
+                    && !new CodemossSettingsService().isCodeBuddyLocalConfigAuthorized()) {
+                pushError(provider, "需要使用本地配置信息", "CODEBUDDY_LOCAL_CONFIG_REQUIRED");
+                return;
+            }
             String node = nodeDetector.findNodeExecutable();
             BridgeDirectoryResolver resolver = BridgePreloader.getSharedResolver();
             File bridgeDir = resolver != null ? resolver.findSdkDir() : null;
@@ -151,6 +156,9 @@ public class CliModelsHandler extends BaseMessageHandler {
                 payload.addProperty("provider", provider);
             }
             callJavaScript("window.setCliModels", escapeJs(gson.toJson(payload)));
+            if ("codebuddy".equals(provider)) {
+                callJavaScript("window.updateCodeBuddyModels", escapeJs(gson.toJson(payload)));
+            }
         } catch (Exception e) {
             LOG.warn("[CliModels] Failed for " + provider + ": " + e.getMessage(), e);
             pushError(provider, e.getMessage() != null ? e.getMessage() : "list models failed");
@@ -189,11 +197,21 @@ public class CliModelsHandler extends BaseMessageHandler {
     }
 
     private void pushError(String provider, String message) {
+        pushError(provider, message, null);
+    }
+
+    private void pushError(String provider, String message, String errorCode) {
         JsonObject error = new JsonObject();
         error.addProperty("success", false);
         error.addProperty("provider", provider != null ? provider : "");
         error.addProperty("error", message != null ? message : "unknown error");
+        if (errorCode != null && !errorCode.isBlank()) {
+            error.addProperty("errorCode", errorCode);
+        }
         error.add("models", gson.toJsonTree(new ArrayList<>()));
         callJavaScript("window.setCliModels", escapeJs(gson.toJson(error)));
+        if ("codebuddy".equals(provider)) {
+            callJavaScript("window.updateCodeBuddyModels", escapeJs(gson.toJson(error)));
+        }
     }
 }

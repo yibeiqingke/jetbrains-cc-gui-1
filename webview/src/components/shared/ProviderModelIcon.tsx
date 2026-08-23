@@ -7,6 +7,8 @@
  */
 import ClaudeColor from '@lobehub/icons/es/Claude/components/Color';
 import ClaudeMono from '@lobehub/icons/es/Claude/components/Mono';
+import CodeBuddyColor from '@lobehub/icons/es/CodeBuddy/components/Color';
+import CodeBuddyMono from '@lobehub/icons/es/CodeBuddy/components/Mono';
 import OpenAIMono from '@lobehub/icons/es/OpenAI/components/Mono';
 import GeminiColor from '@lobehub/icons/es/Gemini/components/Color';
 import GeminiMono from '@lobehub/icons/es/Gemini/components/Mono';
@@ -144,6 +146,8 @@ const VENDOR_ICON_MAP: Record<
   (size: number, colored: boolean) => ReactElement
 > = {
   claude: (size, colored) =>
+  codebuddy: (size, colored) =>
+    colored ? <CodeBuddyColor size={size} /> : <CodeBuddyMono size={size} />,
     colored ? <ClaudeColor size={size} /> : <ClaudeMono size={size} />,
   openai: (size, _colored) =>
     <OpenAIMono size={size} />,

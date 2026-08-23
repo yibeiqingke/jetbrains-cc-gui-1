@@ -149,6 +149,17 @@ describe('resolveProviderModels', () => {
     expect(result.map((m) => m.id)).toEqual(['auto', 'smol', 'slow', 'plan']);
   });
 
+  it('uses the CodeBuddy models.json catalog without adding built-in models', () => {
+    const models = [{ id: 'vendor/codebuddy', label: 'Configured CodeBuddy' }];
+    expect(
+      resolveProviderModels({
+        provider: 'codebuddy',
+        cliModels: models,
+        cliCatalogHasEntries: true,
+      }),
+    ).toEqual(models);
+  });
+
   it('puts Claude customs first and keeps built-ins', () => {
     const customs = [{ id: 'my-claude', label: 'My Claude' }];
     const result = resolveProviderModels({

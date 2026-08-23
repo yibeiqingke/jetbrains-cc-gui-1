@@ -409,6 +409,21 @@ public class SessionSendService {
             String requestedReasoningEffort,
             String permissionMode
     ) {
+        if ("codebuddy".equals(provider)) {
+            try {
+                if (!new CodemossSettingsService().isCodeBuddyLocalConfigAuthorized()) {
+                    MessageCallback accessHandler = createCliMessageHandler(provider);
+                    accessHandler.onError("需要使用本地配置信息");
+                    return CompletableFuture.completedFuture(null);
+                }
+            } catch (Exception e) {
+                LOG.warn("[CodeBuddy] Failed to resolve local config authorization: " + e.getMessage());
+                MessageCallback accessHandler = createCliMessageHandler(provider);
+                accessHandler.onError("需要使用本地配置信息");
+                return CompletableFuture.completedFuture(null);
+            }
+        }
+
         MarkerCliBridge bridge = cliBridges.get(provider);
         if (bridge == null) {
             MessageCallback missingHandler = createCliMessageHandler(provider);
@@ -429,6 +444,7 @@ public class SessionSendService {
         }
 
         String effort = normalizeCliReasoningEffort(
+                provider,
                 requestedReasoningEffort != null ? requestedReasoningEffort : state.getReasoningEffort()
         );
         String modelForCli = normalizeCliModelForProvider(provider, state.getModel());
@@ -473,15 +489,27 @@ public class SessionSendService {
         return new CodexMessageHandler(state, callbacks);
     }
 
-    static String normalizeCliReasoningEffort(String effort) {
+    static String normalizeCliReasoningEffort(String provider, String effort) {
         if (effort == null) {
             return "medium";
         }
         String normalized = effort.trim().toLowerCase();
-        if ("low".equals(normalized) || "medium".equals(normalized) || "high".equals(normalized)) {
+        if ("codebuddy".equals(provider)) {
+            if ("minimal".equals(normalized) || "low".equals(normalized)
+                    || "medium".equals(normalized) || "high".equals(normalized)
+                    || "xhigh".equals(normalized) || "max".equals(normalized)) {
+                return normalized;
+            }
+        } else if ("low".equals(normalized) || "medium".equals(normalized)
+                || "high".equals(normalized)) {
             return normalized;
         }
         return "medium";
+    }
+
+    @Deprecated
+    static String normalizeCliReasoningEffort(String effort) {
+        return normalizeCliReasoningEffort("", effort);
     }
 
     /**

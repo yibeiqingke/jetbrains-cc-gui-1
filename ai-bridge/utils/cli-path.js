@@ -416,3 +416,33 @@ export function resolveOmpCliPath() {
     ],
   });
 }
+/**
+ * Resolve the Node.js entry point for a globally installed CodeBuddy CLI.
+ *
+ * The Agent SDK expects the extensionless `bin/codebuddy` entry point (it
+ * launches that file with Node and maps it to the headless bundle). Passing
+ * npm's `codebuddy.cmd` shim would make Node try to parse the batch file.
+ */
+export function resolveCodeBuddyCliPath() {
+  const envOverride = firstNonEmpty(process.env.CODEBUDDY_CODE_PATH);
+  if (envOverride && pathExists(envOverride)) {
+    if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(envOverride)) {
+      const scriptPath = envOverride.replace(/\.(cmd|bat)$/i, '');
+      if (pathExists(scriptPath)) return scriptPath;
+    }
+    return envOverride;
+  }
+
+  const home = homedir();
+  const appData = process.env.APPDATA || join(home, 'AppData', 'Roaming');
+  const npmPrefix = firstNonEmpty(process.env.npm_config_prefix);
+  const candidates = [
+    join(appData, 'npm', 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
+    npmPrefix && join(npmPrefix, 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
+    join(home, '.npm-global', 'lib', 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
+    join(home, '.local', 'lib', 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
+  ].filter(Boolean);
+
+  return candidates.find(pathExists) || null;
+
+}

@@ -123,7 +123,7 @@ export function ChatInputBoxHeader({
               : sdkStatusError
                 ? t('chat.sdkStatusUnavailable')
               : t('chat.sdkNotInstalled', {
-                  provider: currentProvider === 'codex' ? 'Codex' : 'Claude Code',
+                  provider: currentProvider === 'codex' ? 'Codex' : currentProvider === 'codebuddy' ? 'CodeBuddy' : 'Claude Code',
                 })}
           </span>
           {sdkStatusError ? (

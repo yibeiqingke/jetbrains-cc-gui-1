@@ -435,6 +435,9 @@ export const ModelSelect = ({ value, onChange, models = AVAILABLE_MODELS, curren
                           <span className="model-description" style={MODEL_TEXT_STYLE}>{getModelDescription(model)}</span>
                         )}
                       </div>
+                        {model.credits && (
+                          <span className="model-credits">{model.credits}</span>
+                        )}
                       <button
                         type="button"
                         className={`model-pin-button ${isPinned ? 'is-pinned' : ''}`}
