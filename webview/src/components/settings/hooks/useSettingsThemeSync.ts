@@ -1,5 +1,5 @@
 // hooks/useSettingsThemeSync.ts
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { applyDiffTheme, getStoredDiffTheme, type DiffThemeMode } from '../../../utils/diffTheme';
 import {
   applyChatBarThemeColor,
@@ -102,6 +102,7 @@ export function useSettingsThemeSync(): UseSettingsThemeSyncReturn {
   const [uiThemeStyle, setUiThemeStyle] = useState<UiThemeStyle>(() => getSavedUiThemeStyle());
 
   const [customUiTheme, setCustomUiTheme] = useState(() => loadCustomUiTheme());
+  const previousUiThemeStyle = useRef<UiThemeStyle | null>(null);
 
   useEffect(() => {
     const handleCustomUiThemeChanged = () => {
@@ -119,19 +120,27 @@ export function useSettingsThemeSync(): UseSettingsThemeSyncReturn {
       applyCustomUiTheme(customUiTheme);
       applyChatBarThemeColor('');
     } else {
-      clearCustomUiThemeProperties();
-      if (chatBgColor) {
-        document.documentElement.style.setProperty('--bg-chat', chatBgColor);
-      } else {
-        document.documentElement.style.removeProperty('--bg-chat');
+      if (previousUiThemeStyle.current === 'custom') {
+        clearCustomUiThemeProperties();
       }
-      if (userMsgColor) {
-        document.documentElement.style.setProperty('--color-message-user-bg', userMsgColor);
-      } else {
-        document.documentElement.style.removeProperty('--color-message-user-bg');
+
+      // The default style is intentionally inert: its stylesheet and the
+      // user's existing color preferences remain the source of truth.
+      if (uiThemeStyle !== 'default') {
+        if (chatBgColor) {
+          document.documentElement.style.setProperty('--bg-chat', chatBgColor);
+        } else {
+          document.documentElement.style.removeProperty('--bg-chat');
+        }
+        if (userMsgColor) {
+          document.documentElement.style.setProperty('--color-message-user-bg', userMsgColor);
+        } else {
+          document.documentElement.style.removeProperty('--color-message-user-bg');
+        }
+        applyChatBarThemeColor(chatBarColor);
       }
-      applyChatBarThemeColor(chatBarColor);
     }
+    previousUiThemeStyle.current = uiThemeStyle;
   }, [uiThemeStyle, customUiTheme, chatBgColor, userMsgColor, chatBarColor]);
 
   // Theme switching handler (supports following IDE theme)

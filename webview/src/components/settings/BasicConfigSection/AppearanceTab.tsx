@@ -565,12 +565,6 @@ const AppearanceTab = ({
                     saveCustomUiTheme(preset.theme);
                     notifyCustomUiThemeChanged();
                     setCustomMessage(t('settings.basic.customTheme.presetApplied', { name: t(`settings.basic.customTheme.presets.${preset.nameKey}`) }));
-                    onChatBgColorChange(preset.theme.colors.bgPrimary);
-                    onChatBarColorChange(preset.theme.colors.bgSecondary);
-                    onUserMsgColorChange(preset.theme.colors.userBubble);
-                    setHexInput(preset.theme.colors.bgPrimary);
-                    setChatBarHexInput(preset.theme.colors.bgSecondary);
-                    setUserMsgHexInput(preset.theme.colors.userBubble);
                   }}
                   title={t(`settings.basic.customTheme.presets.${preset.nameKey}`)}
                 >
