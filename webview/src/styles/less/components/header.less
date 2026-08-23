@@ -1,16 +1,15 @@
 /* 导入公共 mixins */
 @import '../mixins.less';
 
-/* Header Styles */
+/* New Header Styles */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 16px;
+    padding: 8px 8px 8px 16px;
     background: var(--color-chat-bars-bg, var(--bg-secondary));
-    color: var(--color-chat-bars-text, var(--text-primary));
     border-bottom: 1px solid var(--color-chat-bars-border, var(--border-primary));
-    min-height: 46px;
+    min-height: 50px;
     flex-shrink: 0;
     z-index: 50;
 }
@@ -46,14 +45,13 @@
     display: flex;
     align-items: center;
     flex: 1;
-    min-width: 0;
+    min-width: 0; /* Allow flex items to shrink below their minimum content size */
     overflow: hidden;
-    gap: 8px;
+    .flex-gap-horizontal(12px);
 
     > * {
-        color: var(--text-primary);
-        font-weight: 600;
-        font-size: 14px;
+        color: var(--color-chat-bars-text, var(--text-secondary));
+        font-weight: 500;
     }
 }
 

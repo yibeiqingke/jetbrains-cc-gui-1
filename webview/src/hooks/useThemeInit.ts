@@ -7,7 +7,6 @@ import {
 import { applyUiThemeStyle, getSavedUiThemeStyle } from '../utils/uiTheme';
 import {
   applyCustomUiTheme,
-  clearCustomUiThemeProperties,
   loadCustomUiTheme,
 } from '../utils/customUiTheme';
 
@@ -73,7 +72,6 @@ export function useThemeInit() {
       applyCustomUiTheme(loadCustomUiTheme());
       applyChatBarThemeColor('');
     } else {
-      clearCustomUiThemeProperties();
       // Initialize chat background color (validate hex format before applying)
       const savedChatBgColor = localStorage.getItem('chatBgColor');
       if (savedChatBgColor && isValidHexColor(savedChatBgColor)) {

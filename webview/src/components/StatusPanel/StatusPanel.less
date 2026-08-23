@@ -1,25 +1,37 @@
-/* StatusPanel Styles - Multi-Theme Segmented Control */
+/* StatusPanel Styles */
+
+
 .status-panel {
   position: relative;
-  margin: 0 16px 8px 16px;
+  margin: 0 20px 8px 20px;
 }
 
-/* Base / Default Tab Header */
+/* Tab Header - Always visible */
 .status-panel-tabs {
   display: flex;
   align-items: center;
-  background: var(--bg-secondary, #252526);
-  border: 1px solid var(--border-primary, #333333);
+  background: var(--color-chat-bars-bg, var(--bg-secondary));
+  border: 1px solid var(--color-chat-bars-border, var(--border-primary));
   border-radius: 6px;
-  padding: 4px 6px;
-  gap: 4px;
+  padding: 5px 8px;
+  gap: 0;
   overflow-x: auto;
   overflow-y: hidden;
   font-size: 80%;
 
   /* Custom scrollbar */
   &::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 2px;
+    &:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
   }
 }
 
@@ -28,26 +40,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 4px;
+  padding: 4px 8px;
   font-weight: 500;
-  color: var(--text-tertiary, #858585);
+  color: var(--color-chat-bars-muted-text, var(--text-muted));
   cursor: pointer;
   user-select: none;
   border-radius: 4px;
   background: transparent;
-  transition: all 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease;
   white-space: nowrap;
 
+  /* 分割线 - 除了最后一个 tab */
+  &:not(:last-child) {
+    border-right: 1px solid var(--color-chat-bars-border, var(--border-primary));
+    border-radius: 4px 0 0 4px;
+    margin-right: -1px;
+  }
+  &:last-child {
+    border-radius: 0 4px 4px 0;
+  }
+
   &:hover {
-    color: var(--text-primary, #ffffff);
-    background: var(--bg-hover, #35373c);
+    color: var(--color-chat-bars-text, var(--text-primary));
+    background: var(--color-chat-bars-hover-bg, var(--bg-hover));
   }
 
   &.active {
-    color: var(--text-primary, #ffffff);
-    background: var(--bg-tertiary, #2b2d31);
-    font-weight: 600;
+    color: var(--color-chat-bars-text, var(--text-primary));
+    background: var(--color-chat-bars-active-bg, var(--bg-tertiary));
   }
 
   .codicon {

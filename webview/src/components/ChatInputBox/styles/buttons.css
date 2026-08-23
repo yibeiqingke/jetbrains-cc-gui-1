@@ -29,7 +29,7 @@
 }
 
 /* ============================================================
-   Send/Stop Button - Multi-Theme Button
+   Send/Stop Button
    ============================================================ */
 .submit-button {
   display: flex;
@@ -37,12 +37,12 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: var(--accent-primary);
+  background: var(--button-primary);
   border: none;
   border-radius: 4px;
-  color: #ffffff;
+  color: white;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s, opacity 0.15s;
 }
 
 /* Google Antigravity Circular Button */
@@ -83,13 +83,11 @@
 }
 
 .submit-button:hover:not(:disabled) {
-  background: var(--accent-primary-hover);
-  opacity: 0.9;
+  opacity: 0.85;
 }
 
 .submit-button:disabled {
-  background: var(--bg-tertiary);
-  color: var(--text-muted);
+  background: var(--button-disabled);
   cursor: not-allowed;
   opacity: 0.5;
 }
@@ -99,10 +97,9 @@
 }
 
 .stop-button {
-  background: var(--color-error, #e81123);
-  color: #ffffff;
+  background: var(--error-color);
 }
 
 .stop-button:hover {
-  background: #c50f1f;
+  background: #d32f2f;
 }

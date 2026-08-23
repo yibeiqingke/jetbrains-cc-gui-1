@@ -58,7 +58,8 @@
 [data-ui-theme="lightGlass"] :is(
   .selector-dropdown,
   .menu-dropdown,
-  .status-panel-popover
+  .status-panel-popover,
+  .completion-dropdown
 ) {
   background: var(--light-glass-pop-bg);
   border-color: var(--light-glass-border);
@@ -119,7 +120,8 @@
 [data-ui-theme="custom"] :is(
   .selector-dropdown,
   .menu-dropdown,
-  .status-panel-popover
+  .status-panel-popover,
+  .completion-dropdown
 ) {
   background: color-mix(in srgb, var(--bg-elevated) calc(100% - 52% * var(--custom-glass-strength, 0)), transparent);
   border: 1px solid var(--border-primary);
