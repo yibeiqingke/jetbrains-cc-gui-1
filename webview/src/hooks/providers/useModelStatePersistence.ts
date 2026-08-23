@@ -12,7 +12,6 @@ import {
   DSH_DEFAULT_MODEL_ID,
   DSH_PRESET_NONE,
   isValidDshPreset,
-  CODEBUDDY_DEFAULT_MODEL_ID,
   isValidPermissionMode,
   normalizeClaudeModelId,
   apply1MContextSuffix,
@@ -196,7 +195,6 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
       let restoredPiModel = PI_DEFAULT_MODEL_ID;
       let restoredOmpModel = OMP_DEFAULT_MODEL_ID;
       let restoredDshModel = DSH_DEFAULT_MODEL_ID;
-      let restoredCodeBuddyModel = CODEBUDDY_DEFAULT_MODEL_ID;
       let restoredGrokPermissionMode: PermissionMode = 'default';
       let restoredKimiPermissionMode: PermissionMode = 'default';
       let restoredOpenCodePermissionMode: PermissionMode = 'default';
@@ -265,7 +263,6 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
         setSelectedDshModel(id);
       });
       const applyCodeBuddyModel = makeCliModelApplier((id) => {
-        restoredCodeBuddyModel = id;
         setSelectedCodeBuddyModel(id);
       });
 

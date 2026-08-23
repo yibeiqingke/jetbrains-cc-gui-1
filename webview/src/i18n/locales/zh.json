@@ -618,8 +618,9 @@
     "providerTab": {
       "claude": "Claude Code",
       "codex": "Codex",
-      "cli": "CLI"
-      "codebuddy": "CodeBuddy",
+      "cli": "CLI",
+      "codebuddy": "CodeBuddy"
+    },
     "codebuddyProvider": {
       "title": "CodeBuddy 供应商管理",
       "description": "使用前请先授权插件读取 CodeBuddy CLI 的本地配置。",
@@ -646,7 +647,6 @@
       "supportsReasoning": "支持推理模式",
       "modelsJsonHint": "将直接保存到 CodeBuddy models.json；API 密钥支持 ${ENV_VAR}。",
       "invalidModelConfig": "请检查 Token 上限、温度（0–2）和 relatedModels JSON。"
-    },
     },
     "cli": {
       "hint": "以下 CLI 需在系统终端自行安装并完成配置。插件只负责检测是否已安装及版本号，不会替你自动安装。请先在终端确认可正常使用，再回到此处使用。",

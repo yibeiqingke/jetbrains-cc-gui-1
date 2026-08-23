@@ -618,8 +618,9 @@
     "providerTab": {
       "claude": "Claude Code",
       "codex": "Codex",
-      "cli": "CLI"
-      "codebuddy": "CodeBuddy",
+      "cli": "CLI",
+      "codebuddy": "CodeBuddy"
+    },
     "codebuddyProvider": {
       "title": "CodeBuddy Provider Management",
       "description": "Authorize access to CodeBuddy CLI's local configuration before using it.",
@@ -646,7 +647,6 @@
       "supportsReasoning": "Supports reasoning",
       "modelsJsonHint": "Saved directly to CodeBuddy models.json. API key may use ${ENV_VAR}.",
       "invalidModelConfig": "Check token limits, temperature (0–2), and relatedModels JSON."
-    },
     },
     "cli": {
       "hint": "These CLIs must be installed and configured in your system terminal. The plugin only detects installation status and version — it will never install them for you. Confirm each CLI works in the terminal before coming back here to use it.",

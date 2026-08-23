@@ -78,7 +78,7 @@ public class CliModelsHandler extends BaseMessageHandler {
         try {
             if ("codebuddy".equals(provider)
                     && !new CodemossSettingsService().isCodeBuddyLocalConfigAuthorized()) {
-                pushError(provider, "需要使用本地配置信息", "CODEBUDDY_LOCAL_CONFIG_REQUIRED");
+                pushError(provider, "\u9700\u8981\u4f7f\u7528\u672c\u5730\u914d\u7f6e\u6587\u4ef6", "CODEBUDDY_LOCAL_CONFIG_REQUIRED");
                 return;
             }
             String node = nodeDetector.findNodeExecutable();

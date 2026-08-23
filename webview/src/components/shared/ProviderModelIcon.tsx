@@ -146,9 +146,9 @@ const VENDOR_ICON_MAP: Record<
   (size: number, colored: boolean) => ReactElement
 > = {
   claude: (size, colored) =>
+    colored ? <ClaudeColor size={size} /> : <ClaudeMono size={size} />,
   codebuddy: (size, colored) =>
     colored ? <CodeBuddyColor size={size} /> : <CodeBuddyMono size={size} />,
-    colored ? <ClaudeColor size={size} /> : <ClaudeMono size={size} />,
   openai: (size, _colored) =>
     <OpenAIMono size={size} />,
   gemini: (size, colored) =>

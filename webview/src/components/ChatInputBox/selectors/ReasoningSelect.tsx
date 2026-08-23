@@ -59,6 +59,7 @@ export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, curr
       : currentProvider === 'codebuddy'
         ? selectedModelInfo?.reasoningSupported !== false
         : true
+  );
 
   // Build the list of available levels for the current model
   const availableLevels = REASONING_LEVELS.filter(level => {
@@ -66,11 +67,11 @@ export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, curr
     if (currentProvider === 'grok') {
       return level.id === 'low' || level.id === 'medium' || level.id === 'high';
     }
-    if (currentProvider === 'codex') {
     if (currentProvider === 'codebuddy') {
       return !selectedModelInfo?.supportedEfforts
         || selectedModelInfo.supportedEfforts.includes(level.id);
     }
+    if (currentProvider === 'codex') {
       return level.id !== 'max' || (selectedModel !== undefined && codexModelSupportsMaxEffort(selectedModel));
     }
     if (currentProvider !== 'claude') {
