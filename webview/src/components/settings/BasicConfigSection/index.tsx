@@ -2,6 +2,7 @@ import { useState } from 'react';
 import styles from './style.module.less';
 import { useTranslation } from 'react-i18next';
 import type { DiffThemeMode } from '../../../utils/diffTheme';
+import type { UiThemeStyle } from '../../../utils/uiTheme';
 import type { UiFontConfig, CodeFontConfig } from '../hooks/useSettingsBasicActions';
 import AppearanceTab from './AppearanceTab';
 import BehaviorTab from './BehaviorTab';
@@ -14,8 +15,6 @@ const BASIC_TABS: { key: BasicTab; icon: string; labelKey: string }[] = [
   { key: 'behavior', icon: 'codicon-gear', labelKey: 'settings.basic.tabs.behavior' },
   { key: 'environment', icon: 'codicon-terminal', labelKey: 'settings.basic.tabs.environment' },
 ];
-
-import type { UiThemeStyle } from '../../../utils/uiTheme';
 
 interface BasicConfigSectionProps {
   theme: 'light' | 'dark' | 'system';

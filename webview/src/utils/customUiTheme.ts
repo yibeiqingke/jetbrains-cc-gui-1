@@ -220,7 +220,7 @@ export const CUSTOM_THEME_PRESETS: CustomUiThemePreset[] = [
 
 export const DEFAULT_CUSTOM_UI_THEME: CustomUiTheme = CUSTOM_THEME_PRESETS[0].theme;
 
-function isColor(value: unknown): value is string {
+export function isCustomUiThemeColor(value: unknown): value is string {
   return typeof value === 'string' && COLOR_PATTERN.test(value);
 }
 
@@ -229,15 +229,20 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
   return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
 }
 
-export function normalizeCustomUiTheme(input: unknown): CustomUiTheme {
+export function normalizeCustomUiTheme(
+  input: unknown,
+  fallbackTheme: CustomUiTheme = DEFAULT_CUSTOM_UI_THEME,
+): CustomUiTheme {
   const source = input && typeof input === 'object' ? input as Partial<CustomUiTheme> : {};
   const rawColors = source.colors && typeof source.colors === 'object' ? source.colors as Partial<CustomUiThemeColors> : {};
-  const fallback = DEFAULT_CUSTOM_UI_THEME.colors;
-  const color = (value: unknown, key: keyof CustomUiThemeColors): string => (isColor(value) ? value : fallback[key]);
+  const fallback = fallbackTheme.colors;
+  const color = (value: unknown, key: keyof CustomUiThemeColors): string => (
+    isCustomUiThemeColor(value) ? value : fallback[key]
+  );
 
   return {
     version: 1,
-    name: typeof source.name === 'string' && source.name.trim() ? source.name.trim().slice(0, 40) : DEFAULT_CUSTOM_UI_THEME.name,
+    name: typeof source.name === 'string' && source.name.trim() ? source.name.trim().slice(0, 40) : fallbackTheme.name,
     mode: source.mode === 'light' ? 'light' : 'dark',
     colors: {
       bgPrimary: color(rawColors.bgPrimary, 'bgPrimary'),
@@ -254,8 +259,8 @@ export function normalizeCustomUiTheme(input: unknown): CustomUiTheme {
       userBubble: color(rawColors.userBubble, 'userBubble'),
       userText: color(rawColors.userText, 'userText'),
     },
-    radiusScale: clampNumber(source.radiusScale, 0, 2, DEFAULT_CUSTOM_UI_THEME.radiusScale),
-    glassStrength: clampNumber(source.glassStrength, 0, 100, DEFAULT_CUSTOM_UI_THEME.glassStrength),
+    radiusScale: clampNumber(source.radiusScale, 0, 2, fallbackTheme.radiusScale),
+    glassStrength: clampNumber(source.glassStrength, 0, 100, fallbackTheme.glassStrength),
   };
 }
 

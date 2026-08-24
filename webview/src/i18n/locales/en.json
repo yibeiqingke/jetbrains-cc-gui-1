@@ -345,7 +345,8 @@
         "claudeWarmDesc": "Cream neutrals with collaborative terracotta accents",
         "solarized": "Solarized Soft",
         "solarizedDesc": "Classic low-contrast reading palette",
-        "custom": "Custom Theme"
+        "custom": "Custom Theme",
+        "customDesc": "Create your own theme with custom colors and effects"
       },
       "language": {
         "label": "Language",
@@ -567,7 +568,8 @@
         "reset": "Reset Default",
         "imported": "Theme imported and applied",
         "exported": "Theme configuration copied",
-        "invalid": "Invalid JSON; the current theme was kept"
+        "invalid": "Invalid JSON; the current theme was kept",
+        "invalidColor": "Enter a valid CSS color"
       },
       "soundNotification": {
         "label": "Task completion alert sound",

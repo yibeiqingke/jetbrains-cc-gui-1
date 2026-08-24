@@ -178,7 +178,8 @@
         "claudeWarmDesc": "米白暖灰配陶土暖色調",
         "solarized": "經典舒目",
         "solarizedDesc": "經典低對比度舒目閱讀配色",
-        "custom": "自訂主題"
+        "custom": "自訂主題",
+        "customDesc": "使用自訂色彩與效果建立專屬主題"
       },
       "language": {
         "label": "介面語言",
@@ -349,7 +350,8 @@
         "reset": "恢復預設",
         "imported": "主題已匯入並套用",
         "exported": "主題設定已複製",
-        "invalid": "JSON 格式無效，已保留目前主題"
+        "invalid": "JSON 格式無效，已保留目前主題",
+        "invalidColor": "請輸入有效的色彩值"
       },
       "soundNotification": {
           "label": "自訂主題",

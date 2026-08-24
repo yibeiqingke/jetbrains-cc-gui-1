@@ -7,12 +7,15 @@ import {
   CUSTOM_THEME_PRESETS,
   exportCustomUiTheme,
   importCustomUiTheme,
+  isCustomUiThemeColor,
   loadCustomUiTheme,
+  normalizeCustomUiTheme,
   notifyCustomUiThemeChanged,
   saveCustomUiTheme,
   type CustomUiTheme,
 } from '../../../utils/customUiTheme';
 import type { UiFontConfig, CodeFontConfig } from '../hooks/useSettingsBasicActions';
+import type { UiThemeStyle } from '../../../utils/uiTheme';
 
 // Preset colors (module-level constants to avoid recreating on each render)
 const DARK_PRESETS = [
@@ -130,8 +133,6 @@ const SystemIcon = () => (
   </svg>
 );
 
-import type { UiThemeStyle } from '../../../utils/uiTheme';
-
 const UI_THEME_STYLE_OPTIONS: Array<{
   key: UiThemeStyle;
   icon: string;
@@ -235,7 +236,9 @@ const AppearanceTab = ({
   const [userMsgHexInput, setUserMsgHexInput] = useState(userMsgColor || '');
   const [chatBarHexInput, setChatBarHexInput] = useState(chatBarColor || '');
   const [customTheme, setCustomTheme] = useState<CustomUiTheme>(() => loadCustomUiTheme());
+  const [customColorDrafts, setCustomColorDrafts] = useState<Partial<Record<keyof CustomUiTheme['colors'], string>>>({});
   const [customJson, setCustomJson] = useState(() => exportCustomUiTheme(loadCustomUiTheme()));
+  const [customJsonDirty, setCustomJsonDirty] = useState(false);
   const [customMessage, setCustomMessage] = useState('');
   const [selectedUiFontOption, setSelectedUiFontOption] = useState(() => {
     if (!uiFontConfig || uiFontConfig.mode === 'followEditor') return 'followEditor';
@@ -267,9 +270,11 @@ const AppearanceTab = ({
 
   const updateCustomTheme = (updater: (current: CustomUiTheme) => CustomUiTheme) => {
     setCustomTheme((current) => {
-      const next = updater(current);
+      const next = normalizeCustomUiTheme(updater(current), current);
       saveCustomUiTheme(next);
-      setCustomJson(exportCustomUiTheme(next));
+      if (!customJsonDirty) {
+        setCustomJson(exportCustomUiTheme(next));
+      }
       notifyCustomUiThemeChanged();
       return next;
     });
@@ -561,7 +566,9 @@ const AppearanceTab = ({
                   className={`${styles.customPresetBtn} ${customTheme.name === preset.theme.name ? styles.active : ''}`}
                   onClick={() => {
                     setCustomTheme(preset.theme);
+                    setCustomColorDrafts({});
                     setCustomJson(exportCustomUiTheme(preset.theme));
+                    setCustomJsonDirty(false);
                     saveCustomUiTheme(preset.theme);
                     notifyCustomUiThemeChanged();
                     setCustomMessage(t('settings.basic.customTheme.presetApplied', { name: t(`settings.basic.customTheme.presets.${preset.nameKey}`) }));
@@ -608,24 +615,40 @@ const AppearanceTab = ({
                     <input
                       type="color"
                       value={/^#[0-9a-fA-F]{6}$/.test(customTheme.colors[key]) ? customTheme.colors[key] : '#000000'}
-                      onChange={(event) => updateCustomTheme(current => ({
-                        ...current,
-                        colors: { ...current.colors, [key]: event.target.value },
-                      }))}
+                      onChange={(event) => {
+                        setCustomColorDrafts(current => {
+                          const next = { ...current };
+                          delete next[key];
+                          return next;
+                        });
+                        updateCustomTheme(current => ({
+                          ...current,
+                          colors: { ...current.colors, [key]: event.target.value },
+                        }));
+                      }}
                     />
                   </label>
                   <input
                     type="text"
                     className={styles.customHexInput}
-                    value={customTheme.colors[key] || ''}
+                    value={customColorDrafts[key] ?? customTheme.colors[key] ?? ''}
                     placeholder="#000000"
-                    maxLength={7}
                     onChange={(event) => {
                       const val = event.target.value;
-                      updateCustomTheme(current => ({
-                        ...current,
-                        colors: { ...current.colors, [key]: val },
-                      }));
+                      setCustomColorDrafts(current => ({ ...current, [key]: val }));
+                      if (isCustomUiThemeColor(val)) {
+                        setCustomMessage('');
+                        updateCustomTheme(current => ({
+                          ...current,
+                          colors: { ...current.colors, [key]: val },
+                        }));
+                      }
+                    }}
+                    onBlur={(event) => {
+                      const value = event.target.value;
+                      if (!isCustomUiThemeColor(value)) {
+                        setCustomMessage(t('settings.basic.customTheme.invalidColor'));
+                      }
                     }}
                   />
                 </div>
@@ -650,7 +673,10 @@ const AppearanceTab = ({
           <textarea
             className={`${styles.languageSelect} ${styles.customJsonEditor}`}
             value={customJson}
-            onChange={(event) => setCustomJson(event.target.value)}
+            onChange={(event) => {
+              setCustomJson(event.target.value);
+              setCustomJsonDirty(true);
+            }}
             spellCheck={false}
           />
 
@@ -660,6 +686,8 @@ const AppearanceTab = ({
                 const imported = importCustomUiTheme(customJson);
                 saveCustomUiTheme(imported);
                 setCustomTheme(imported);
+                setCustomColorDrafts({});
+                setCustomJsonDirty(false);
                 notifyCustomUiThemeChanged();
                 setCustomMessage(t('settings.basic.customTheme.imported'));
               } catch {
@@ -673,7 +701,9 @@ const AppearanceTab = ({
             <button type="button" onClick={() => {
               saveCustomUiTheme(DEFAULT_CUSTOM_UI_THEME);
               setCustomTheme(DEFAULT_CUSTOM_UI_THEME);
+              setCustomColorDrafts({});
               setCustomJson(exportCustomUiTheme(DEFAULT_CUSTOM_UI_THEME));
+              setCustomJsonDirty(false);
               notifyCustomUiThemeChanged();
               setCustomMessage('');
             }}>{t('settings.basic.customTheme.reset')}</button>

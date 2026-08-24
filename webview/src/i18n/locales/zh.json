@@ -345,7 +345,8 @@
         "claudeWarmDesc": "米白暖灰配陶土暖色调",
         "solarized": "经典舒目",
         "solarizedDesc": "经典低对比度舒目阅读配色",
-        "custom": "自定义主题"
+        "custom": "自定义主题",
+        "customDesc": "使用自定义颜色和效果创建专属主题"
       },
       "language": {
         "label": "界面语言",
@@ -567,7 +568,8 @@
         "reset": "恢复默认",
         "imported": "主题已导入并应用",
         "exported": "主题配置已复制",
-        "invalid": "JSON 格式无效，已保留当前主题"
+        "invalid": "JSON 格式无效，已保留当前主题",
+        "invalidColor": "请输入有效的颜色值"
       },
       "soundNotification": {
         "label": "任务完成提示音",
