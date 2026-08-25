@@ -8,6 +8,27 @@ interface CodeBuddyModelsPayload {
   error?: string;
 }
 let modelsCache: CodexCustomModel[] | null = null;
+type ModelsConfigListener = (json: string) => void;
+const modelsConfigListeners = new Set<ModelsConfigListener>();
+
+function dispatchModelsConfig(json: string) {
+  for (const listener of [...modelsConfigListeners]) {
+    listener(json);
+  }
+}
+
+function subscribeModelsConfig(listener: ModelsConfigListener): () => void {
+  modelsConfigListeners.add(listener);
+  window.updateCodeBuddyModelsConfig = dispatchModelsConfig;
+
+  return () => {
+    modelsConfigListeners.delete(listener);
+    if (modelsConfigListeners.size === 0
+      && window.updateCodeBuddyModelsConfig === dispatchModelsConfig) {
+      delete window.updateCodeBuddyModelsConfig;
+    }
+  };
+}
 
 function normalizeModel(value: unknown): CodexCustomModel | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
@@ -74,22 +95,29 @@ export function useCodeBuddyModelsConfig(enabled: boolean) {
     const handleModels = (json: string) => {
       try {
         const payload = JSON.parse(json) as CodeBuddyModelsPayload;
-        const next = payload.success === false ? [] : normalizeModels(payload.models);
+        if (payload.success === false) {
+          // Authorisation failure / save error: the push carries no models array,
+          // and wiping the local list would make a previously working model look
+          // deleted in the UI even though models.json on disk was untouched.
+          // Keep the optimistic local state and surface the error instead.
+          console.warn('[useCodeBuddyModelsConfig] Java push reported failure:', payload);
+          return;
+        }
+        const next = normalizeModels(payload.models);
         modelsCache = next;
         setModels(next);
       } catch {
-        modelsCache = [];
-        setModels([]);
+        // Malformed payload: ignore instead of blanking the list. The next save
+        // round-trip will re-synchronise the authoritative state.
+        console.warn('[useCodeBuddyModelsConfig] Failed to parse Java models payload');
       }
     };
 
-    window.updateCodeBuddyModelsConfig = handleModels;
+    const unsubscribeModelsConfig = subscribeModelsConfig(handleModels);
     refresh();
     window.addEventListener('codebuddy-models-config-refresh', refresh);
     return () => {
-      if (window.updateCodeBuddyModelsConfig === handleModels) {
-        delete window.updateCodeBuddyModelsConfig;
-      }
+      unsubscribeModelsConfig();
       window.removeEventListener('codebuddy-models-config-refresh', refresh);
     };
   }, [enabled, refresh]);
@@ -113,15 +141,19 @@ export function useCodeBuddyModelsConfig(enabled: boolean) {
     modelsCache = next;
     modelsRef.current = next;
     setModels(next);
-    sendToJava(`save_codebuddy_models_config:${JSON.stringify({
+    sendToJava('save_codebuddy_models_config', JSON.stringify({
       models: changed.map(withoutScope).map((model, index) => ({
         ...model,
         __ccguiScope: changed[index].__ccguiScope,
       })),
       deletedModels,
-    })}`);
+    }));
+    // Notify other consumers that models.json changed. Do NOT dispatch a
+    // 'codebuddy-models-config-refresh' here: the save request itself triggers
+    // the Java side to push the authoritative re-read, and firing a concurrent
+    // get_codebuddy_models_config races with the write — an early response can
+    // overwrite the optimistic setModels(next) above and hide a just-saved model.
     window.dispatchEvent(new Event('codebuddy-models-config-changed'));
-    sendToJava('get_cli_models', 'codebuddy');
   }, []);
 
   return { models, updateModels, refresh };

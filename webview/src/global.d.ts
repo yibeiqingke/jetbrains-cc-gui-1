@@ -1169,8 +1169,6 @@ interface Window {
           defaultModel?: string;
         }
   ) => void;
-  /** CodeBuddy provider settings model catalog callback. */
-  updateCodeBuddyModels?: (json: string) => void;
   /** CodeBuddy models.json custom model configuration callback. */
   updateCodeBuddyModelsConfig?: (json: string) => void;
   /** CodeBuddy local configuration consent/authentication status callback. */

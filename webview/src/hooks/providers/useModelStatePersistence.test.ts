@@ -491,3 +491,49 @@ describe('useModelStatePersistence — codex dynamic catalog models', () => {
     expect(bridgeEventsFor('set_model')).toHaveLength(1);
   });
 });
+
+describe('useModelStatePersistence — CodeBuddy restore', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    sendBridgeEventMock.mockClear();
+    (window as unknown as { sendToJava?: unknown }).sendToJava = () => {};
+    window.__CCGUI_PAGE_CONTEXT_READY__ = true;
+    window.__CCGUI_RECOVERY_RELOAD__ = false;
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    delete (window as unknown as { sendToJava?: unknown }).sendToJava;
+    delete window.__CCGUI_PAGE_CONTEXT_READY__;
+    delete window.__CCGUI_RECOVERY_RELOAD__;
+  });
+
+  it('restores CodeBuddy provider, model and permission mode', () => {
+    const setCurrentProvider = vi.fn();
+    const setSelectedCodeBuddyModel = vi.fn();
+    const setCodeBuddyPermissionMode = vi.fn();
+    const setPermissionMode = vi.fn();
+    localStorage.setItem('model-selection-state', JSON.stringify({
+      provider: 'codebuddy',
+      codeBuddyModel: 'vendor/codebuddy-model',
+      codeBuddyPermissionMode: 'plan',
+      reasoningEffort: 'minimal',
+    }));
+
+    renderHook(() => useModelStatePersistence(makeOptions({
+      setCurrentProvider,
+      setSelectedCodeBuddyModel,
+      setCodeBuddyPermissionMode,
+      setPermissionMode,
+    })));
+    vi.advanceTimersByTime(200);
+
+    expect(setCurrentProvider).toHaveBeenCalledWith('codebuddy');
+    expect(setSelectedCodeBuddyModel).toHaveBeenCalledWith('vendor/codebuddy-model');
+    expect(setCodeBuddyPermissionMode).toHaveBeenCalledWith('default');
+    expect(setPermissionMode).toHaveBeenCalledWith('default');
+    expect(bridgeEventsFor('set_provider')).toEqual([['set_provider', 'codebuddy']]);
+    expect(bridgeEventsFor('set_model')).toEqual([['set_model', 'vendor/codebuddy-model']]);
+  });
+});

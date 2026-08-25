@@ -15,9 +15,10 @@ function emitModels(payload: unknown) {
 }
 
 function savedRequest() {
-  const message = String(sendToJavaMock.mock.calls
-    .find(([value]) => String(value).startsWith('save_codebuddy_models_config:'))?.[0]);
-  return JSON.parse(message.replace(/^save_codebuddy_models_config:/, '')) as {
+  const call = sendToJavaMock.mock.calls
+    .find(([command]) => String(command) === 'save_codebuddy_models_config');
+  const content = call?.[1] ?? '{}';
+  return JSON.parse(String(content)) as {
     models: Array<Record<string, unknown>>;
     deletedModels: Array<Record<string, unknown>>;
   };
@@ -72,6 +73,27 @@ describe('useCodeBuddyModelsConfig', () => {
     unmount();
   });
 
+  it('delivers the config response to multiple mounted consumers', () => {
+    const { result, unmount } = renderHook(() => ({
+      first: useCodeBuddyModelsConfig(true),
+      second: useCodeBuddyModelsConfig(true),
+    }));
+
+    emitModels({
+      success: true,
+      models: [{ id: 'gpt-5.4-mini', name: 'GPT-5.4 mini' }],
+    });
+
+    expect(result.current.first.models).toEqual([
+      expect.objectContaining({ id: 'gpt-5.4-mini', label: 'GPT-5.4 mini' }),
+    ]);
+    expect(result.current.second.models).toEqual([
+      expect.objectContaining({ id: 'gpt-5.4-mini', label: 'GPT-5.4 mini' }),
+    ]);
+
+    unmount();
+  });
+
   it('refreshes the models.json catalog on demand', () => {
     const { result, unmount } = renderHook(() => useCodeBuddyModelsConfig(true));
     sendToJavaMock.mockClear();
@@ -119,7 +141,26 @@ describe('useCodeBuddyModelsConfig', () => {
       },
     ]);
     expect(request.deletedModels).toEqual([{ id: 'user/remove', __ccguiScope: 'user' }]);
-    expect(sendToJavaMock).toHaveBeenLastCalledWith('get_cli_models', 'codebuddy');
+    expect(sendToJavaMock).not.toHaveBeenCalledWith('get_cli_models', 'codebuddy');
+    unmount();
+  });
+
+  it('keeps the existing list when Java reports a save failure', () => {
+    const { result, unmount } = renderHook(() => useCodeBuddyModelsConfig(true));
+    emitModels({
+      success: true,
+      models: [{ id: 'gpt-5.5', name: 'GPT-5.5' }, { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna' }],
+    });
+    expect(result.current.models).toHaveLength(2);
+
+    // A failed save push carries no models array and must not blank the list.
+    emitModels({ success: false, errorCode: 'CODEBUDDY_LOCAL_CONFIG_REQUIRED' });
+
+    expect(result.current.models).toHaveLength(2);
+    expect(result.current.models).toEqual([
+      expect.objectContaining({ id: 'gpt-5.5' }),
+      expect.objectContaining({ id: 'gpt-5.6-luna' }),
+    ]);
     unmount();
   });
 

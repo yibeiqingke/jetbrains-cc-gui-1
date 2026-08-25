@@ -10,6 +10,7 @@ import {
   OPENCODE_DEFAULT_MODEL_ID,
   PI_DEFAULT_MODEL_ID,
   DSH_DEFAULT_MODEL_ID,
+  CODEBUDDY_DEFAULT_MODEL_ID,
   DSH_PRESET_NONE,
   isValidDshPreset,
   isValidPermissionMode,
@@ -21,7 +22,7 @@ import type { CodexFastMode, PermissionMode, ReasoningEffort } from '../../compo
 import { isCliOnlyProvider, normalizeCliPermissionMode, OMP_ROLE_MODEL_IDS } from './cliProviders';
 
 const STORAGE_KEY = 'model-selection-state';
-const REASONING_VALUES = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+const REASONING_VALUES = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 const CODEX_FAST_MODE_VALUES = ['normal', 'fast'] as const;
 
 const getCustomModels = (key: string): { id: string }[] => {
@@ -195,6 +196,7 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
       let restoredPiModel = PI_DEFAULT_MODEL_ID;
       let restoredOmpModel = OMP_DEFAULT_MODEL_ID;
       let restoredDshModel = DSH_DEFAULT_MODEL_ID;
+      let restoredCodeBuddyModel = CODEBUDDY_DEFAULT_MODEL_ID;
       let restoredGrokPermissionMode: PermissionMode = 'default';
       let restoredKimiPermissionMode: PermissionMode = 'default';
       let restoredOpenCodePermissionMode: PermissionMode = 'default';
@@ -263,6 +265,7 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
         setSelectedDshModel(id);
       });
       const applyCodeBuddyModel = makeCliModelApplier((id) => {
+        restoredCodeBuddyModel = id;
         setSelectedCodeBuddyModel(id);
       });
 
@@ -305,7 +308,7 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
           restoredDshPermissionMode = normalizeCliPermissionMode(state.dshPermissionMode);
         }
         if (isValidPermissionMode(state.codeBuddyPermissionMode)) {
-          restoredCodeBuddyPermissionMode = state.codeBuddyPermissionMode;
+          restoredCodeBuddyPermissionMode = normalizeCliPermissionMode(state.codeBuddyPermissionMode, 'codebuddy');
         }
 
         if (typeof state.longContextEnabled === 'boolean') {
@@ -313,7 +316,8 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
           setLongContextEnabled(state.longContextEnabled);
         }
 
-        if (isReasoningEffort(state.reasoningEffort)) {
+        if (isReasoningEffort(state.reasoningEffort)
+          && (state.reasoningEffort !== 'minimal' || providerCandidate === 'codebuddy')) {
           setReasoningEffort(state.reasoningEffort);
         }
         if (isCodexFastMode(state.codexFastMode)) {
@@ -412,6 +416,8 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
                   ? restoredOmpPermissionMode
                   : restoredProvider === 'dsh'
                     ? restoredDshPermissionMode
+                    : restoredProvider === 'codebuddy'
+                      ? restoredCodeBuddyPermissionMode
                     : restoredClaudePermissionMode;
       setClaudePermissionMode(restoredClaudePermissionMode);
       setCodexPermissionMode(restoredCodexPermissionMode);
@@ -450,6 +456,8 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
                       ? restoredOmpModel
                       : restoredProvider === 'dsh'
                         ? restoredDshModel
+                        : restoredProvider === 'codebuddy'
+                          ? restoredCodeBuddyModel
                         : apply1MContextSuffix(restoredClaudeModel, restoredLongContextEnabled);
           sendBridgeEvent('set_model', modelToSync);
           // Do NOT push the permission mode to Java on boot. Java is the source

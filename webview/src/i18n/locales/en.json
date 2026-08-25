@@ -636,17 +636,15 @@
       "deleteModel": "Delete model {{name}}",
       "modelDeleted": "Deleted model {{name}}",
       "vendorPlaceholder": "Vendor",
-      "apiKeyPlaceholder": "API key or ${ENV_VAR}",
-      "urlPlaceholder": "https://.../v1/chat/completions",
-      "maxInputTokensPlaceholder": "Max input tokens",
-      "maxOutputTokensPlaceholder": "Max output tokens",
-      "temperaturePlaceholder": "Temperature (0–2)",
-      "relatedModelsPlaceholder": "relatedModels JSON, e.g. {\"lite\":\"fast-model\"}",
-      "supportsToolCall": "Supports tool calls",
-      "supportsImages": "Supports images",
-      "supportsReasoning": "Supports reasoning",
+      "apiKeyPlaceholder": "API KEY",
+      "urlPlaceholder": "BASE URL (OpenAI compatible)",
+      "maxInputTokensPlaceholder": "Input (context)",
+      "maxOutputTokensPlaceholder": "Output (max output)",
+      "supportsToolCall": "Tool calls",
+      "supportsImages": "Images",
+      "supportsReasoning": "Reasoning",
       "modelsJsonHint": "Saved directly to CodeBuddy models.json. API key may use ${ENV_VAR}.",
-      "invalidModelConfig": "Check token limits, temperature (0–2), and relatedModels JSON."
+      "invalidModelConfig": "Check token limits."
     },
     "cli": {
       "hint": "These CLIs must be installed and configured in your system terminal. The plugin only detects installation status and version — it will never install them for you. Confirm each CLI works in the terminal before coming back here to use it.",
@@ -2295,6 +2293,10 @@
   },
   "reasoning": {
     "title": "Select reasoning depth",
+    "minimal": {
+      "label": "Minimal",
+      "description": "Minimal reasoning for the fastest responses"
+    },
     "low": {
       "label": "Low",
       "description": "Quick responses with basic reasoning"

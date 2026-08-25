@@ -15,6 +15,7 @@ export async function handleCodeBuddyCommand(command, args, stdinData) {
             permissionMode: args[3],
             model: args[4],
             reasoningEffort: args[5],
+            attachments: [],
           };
       await sendMessage(
         input.message || '',
@@ -23,6 +24,7 @@ export async function handleCodeBuddyCommand(command, args, stdinData) {
         input.permissionMode || 'default',
         input.model || '',
         input.reasoningEffort || '',
+        input.attachments || [],
       );
       break;
     }

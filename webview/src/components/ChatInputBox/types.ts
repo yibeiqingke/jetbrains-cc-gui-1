@@ -282,8 +282,6 @@ export interface ModelInfo {
   supportedEfforts?: ReasoningEffort[];
   /** Provider-level indication that the model supports reasoning controls. */
   reasoningSupported?: boolean;
-  /** Provider-reported default effort. */
-  defaultEffort?: ReasoningEffort;
 }
 
 /**
@@ -590,7 +588,7 @@ export const isValidDshPreset = (value: unknown): value is DshPreset =>
   typeof value === 'string'
   && (DSH_PRESETS.some((preset) => preset.id === value)
     || getUserDshPresetOptions().some((preset) => preset.id === value));
-/** CodeBuddy Agent SDK models. The backend supplies the catalog at runtime. */
+/** CodeBuddy Agent SDK models are supplied by the dynamic catalog. */
 export const CODEBUDDY_DEFAULT_MODEL_ID = '';
 export const CODEBUDDY_MODELS: ModelInfo[] = [];
 

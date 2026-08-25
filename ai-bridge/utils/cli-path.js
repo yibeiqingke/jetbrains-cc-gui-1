@@ -1,5 +1,5 @@
 /**
- * Shared CLI binary path resolution for headless CLI providers (Grok / Kimi / OpenCode / PI).
+ * Shared CLI binary path resolution for headless CLI providers.
  *
  * Priority:
  * 1. Explicit env overrides
@@ -441,6 +441,10 @@ export function resolveCodeBuddyCliPath() {
     npmPrefix && join(npmPrefix, 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
     join(home, '.npm-global', 'lib', 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
     join(home, '.local', 'lib', 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
+    ...(process.platform !== 'win32' ? [
+      join('/usr/local', 'lib', 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
+      join('/opt/homebrew', 'lib', 'node_modules', '@tencent-ai', 'codebuddy-code', 'bin', 'codebuddy'),
+    ] : []),
   ].filter(Boolean);
 
   return candidates.find(pathExists) || null;

@@ -9,7 +9,7 @@ import com.github.claudecodegui.model.DeleteResult;
 import com.github.claudecodegui.model.PromptScope;
 import com.github.claudecodegui.session.SessionState;
 import com.github.claudecodegui.dependency.DependencyManager;
-import com.github.claudecodegui.util.PlatformUtils;
+import com.github.claudecodegui.bridge.NodeDetector;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
@@ -2575,7 +2575,7 @@ public class CodemossSettingsService {
         String configured = System.getenv("CODEBUDDY_HOME");
         String home = configured != null && !configured.isBlank()
                 ? configured.trim()
-                : PlatformUtils.getHomeDirectory() + File.separator + ".codebuddy";
+                : NodeDetector.resolveHomeForFileOps() + File.separator + ".codebuddy";
         Path root = Paths.get(home);
         return Files.isDirectory(root)
                 && (Files.isRegularFile(root.resolve("settings.json"))

@@ -332,7 +332,15 @@ class HistoryDeleteService {
     }
 
     private boolean deleteCodeBuddySession(String sessionId) throws java.io.IOException {
-        String projectPath = context.resolveEffectiveWorkingDirectory();
+        String rawPath = context.resolveEffectiveWorkingDirectory();
+        if (rawPath == null || rawPath.isBlank()) {
+            LOG.warn("[HistoryHandler] CodeBuddy deletion rejected: working directory is required");
+            return false;
+        }
+        String nodePath = NodeDetector.getInstance().getCachedNodePath();
+        String projectPath = NodeDetector.isWslPath(nodePath)
+                ? NodeDetector.convertToWslPath(rawPath)
+                : rawPath;
         boolean deleted = new com.github.claudecodegui.provider.codebuddy.CodeBuddyHistoryReader()
                 .deleteSession(sessionId, projectPath);
         LOG.info("[HistoryHandler] Delete CodeBuddy session " + sessionId + ": " + (deleted ? "ok" : "not found"));

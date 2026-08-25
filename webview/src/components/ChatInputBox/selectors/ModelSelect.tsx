@@ -181,11 +181,15 @@ export const ModelSelect = ({ value, onChange, models = AVAILABLE_MODELS, curren
   // static fallback is available. Falling back to models[0] made OpenCode (and
   // other dynamic providers) visually snap back to the first entry after leaving
   // history and remounting ChatScreen.
-  const currentModel = models.find(m => m.id === normalizedValue)
+  const currentModel: ModelInfo = models.find(m => m.id === normalizedValue)
     || models.find(m => m.id === strippedValue)
     || (strippedValue
       ? { id: strippedValue, label: strippedValue } as ModelInfo
-      : models[0]);
+      : models[0])
+    || {
+      id: normalizedValue,
+      label: t('models.selectModel', { defaultValue: 'Select a model' }),
+    };
   const modelMapping = readClaudeModelMapping();
 
   useEffect(() => {

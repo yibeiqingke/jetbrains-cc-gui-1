@@ -5,6 +5,7 @@ import com.github.claudecodegui.bridge.EnvironmentConfigurator;
 import com.github.claudecodegui.bridge.NodeDetector;
 import com.github.claudecodegui.handler.core.BaseMessageHandler;
 import com.github.claudecodegui.handler.core.HandlerContext;
+import com.github.claudecodegui.i18n.ClaudeCodeGuiBundle;
 import com.github.claudecodegui.provider.dsh.DshEnvSupport;
 import com.github.claudecodegui.settings.CodemossSettingsService;
 import com.github.claudecodegui.startup.BridgePreloader;
@@ -78,7 +79,8 @@ public class CliModelsHandler extends BaseMessageHandler {
         try {
             if ("codebuddy".equals(provider)
                     && !new CodemossSettingsService().isCodeBuddyLocalConfigAuthorized()) {
-                pushError(provider, "\u9700\u8981\u4f7f\u7528\u672c\u5730\u914d\u7f6e\u6587\u4ef6", "CODEBUDDY_LOCAL_CONFIG_REQUIRED");
+                pushError(provider, ClaudeCodeGuiBundle.message("error.codebuddyLocalConfigRequired"),
+                        "CODEBUDDY_LOCAL_CONFIG_REQUIRED");
                 return;
             }
             String node = nodeDetector.findNodeExecutable();
@@ -156,9 +158,6 @@ public class CliModelsHandler extends BaseMessageHandler {
                 payload.addProperty("provider", provider);
             }
             callJavaScript("window.setCliModels", escapeJs(gson.toJson(payload)));
-            if ("codebuddy".equals(provider)) {
-                callJavaScript("window.updateCodeBuddyModels", escapeJs(gson.toJson(payload)));
-            }
         } catch (Exception e) {
             LOG.warn("[CliModels] Failed for " + provider + ": " + e.getMessage(), e);
             pushError(provider, e.getMessage() != null ? e.getMessage() : "list models failed");
@@ -210,8 +209,5 @@ public class CliModelsHandler extends BaseMessageHandler {
         }
         error.add("models", gson.toJsonTree(new ArrayList<>()));
         callJavaScript("window.setCliModels", escapeJs(gson.toJson(error)));
-        if ("codebuddy".equals(provider)) {
-            callJavaScript("window.updateCodeBuddyModels", escapeJs(gson.toJson(error)));
-        }
     }
 }

@@ -11,7 +11,6 @@ test('normalizes CodeBuddy model credits and reasoning capabilities', () => {
       supportsReasoning: true,
       reasoning: {
         supportedEfforts: ['low', { id: 'max' }, 'unsupported'],
-        defaultEffort: 'high',
       },
     },
   ]);
@@ -23,7 +22,6 @@ test('normalizes CodeBuddy model credits and reasoning capabilities', () => {
     credits: 'x0.79 credits',
     reasoningSupported: true,
     supportedEfforts: ['low', 'max'],
-    defaultEffort: 'high',
   }]);
 });
 

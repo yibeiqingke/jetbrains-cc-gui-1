@@ -7,6 +7,31 @@ import { resolveCodeBuddyCliPath } from '../../utils/cli-path.js';
 // lets us report that the user needs to run `codebuddy cli` themselves.
 const AUTH_STATUS_TIMEOUT_MS = 4000;
 
+/**
+ * Map an authentication failure to a stable error code. Timeouts (SDK `code`
+ * "timeout" or a "timed out" message) become CODEBUDDY_AUTH_CHECK_TIMEOUT;
+ * anything else (including a real "authentication failed" root cause) is
+ * surfaced as CODEBUDDY_AUTH_CHECK_FAILED rather than being swallowed.
+ */
+export function classifyAuthError(error) {
+  const code = error?.code || error?.type;
+  const errorMessage = error?.message || String(error);
+  if (code === 'timeout' || /timed out/i.test(errorMessage)) {
+    return {
+      success: false,
+      authenticated: false,
+      errorCode: 'CODEBUDDY_AUTH_CHECK_TIMEOUT',
+      error: errorMessage,
+    };
+  }
+  return {
+    success: false,
+    authenticated: false,
+    errorCode: 'CODEBUDDY_AUTH_CHECK_FAILED',
+    error: errorMessage,
+  };
+}
+
 export async function getAuthStatus() {
   try {
     requireSdk('codebuddy');
@@ -32,18 +57,6 @@ export async function getAuthStatus() {
       userName: userinfo?.userName || userinfo?.userNickname || '',
     };
   } catch (error) {
-    const code = error?.code || error?.type;
-    if (code === 'timeout' || /timed out|authentication/i.test(error?.message || '')) {
-      return {
-        success: true,
-        authenticated: false,
-        errorCode: 'CODEBUDDY_LOGIN_REQUIRED',
-      };
-    }
-    return {
-      success: false,
-      authenticated: false,
-      error: error?.message || String(error),
-    };
+    return classifyAuthError(error);
   }
 }

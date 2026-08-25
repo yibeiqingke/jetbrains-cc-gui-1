@@ -46,6 +46,24 @@ function normalizePermissionMode(value) {
   return VALID_PERMISSION_MODES.has(value) ? value : 'default';
 }
 
+export function buildPromptWithAttachments(message, attachments) {
+  const validAttachments = Array.isArray(attachments)
+    ? attachments.filter((attachment) => attachment && typeof attachment === 'object')
+    : [];
+  if (validAttachments.length === 0) return message || '';
+
+  const attachmentText = validAttachments.map((attachment) => {
+    const fileName = String(attachment.fileName || 'attachment');
+    const mediaType = String(attachment.mediaType || 'application/octet-stream');
+    const data = typeof attachment.data === 'string' ? attachment.data : '';
+    if (mediaType.startsWith('image/') && data) {
+      return `![${fileName}](data:${mediaType};base64,${data})`;
+    }
+    return `Attached file: ${fileName} (${mediaType})`;
+  }).join('\n');
+  return `${message || ''}\n\n## Attachments\n${attachmentText}`.trim();
+}
+
 export function normalizeReasoningEffort(value) {
   const effort = typeof value === 'string' ? value.trim().toLowerCase() : '';
   return VALID_REASONING_EFFORTS.has(effort) ? effort : '';
@@ -69,6 +87,21 @@ export function buildQueryOptions({ cwd, permissionMode, model, sessionId, reaso
   return options;
 }
 
+/** Return only the newly appended part of an assistant snapshot. */
+export function computeAssistantSnapshotDelta(snapshot, previousSnapshot, emittedText, allowRepeat = false) {
+  if (!snapshot) return '';
+  if (previousSnapshot) {
+    if (snapshot === previousSnapshot) return '';
+    if (snapshot.startsWith(previousSnapshot)) return snapshot.slice(previousSnapshot.length);
+    if (previousSnapshot.startsWith(snapshot)) return '';
+  }
+  if (!allowRepeat && emittedText) {
+    if (emittedText.endsWith(snapshot)) return '';
+    if (snapshot.startsWith(emittedText)) return snapshot.slice(emittedText.length);
+  }
+  return snapshot;
+}
+
 export async function sendMessage(
   message,
   sessionId = '',
@@ -76,6 +109,7 @@ export async function sendMessage(
   permissionMode = 'default',
   model = '',
   reasoningEffort = '',
+  attachments = [],
 ) {
   let streamStarted = false;
   try {
@@ -105,8 +139,15 @@ export async function sendMessage(
     streamStarted = true;
     let currentSessionId = sessionId || '';
     let assistantText = '';
+    let currentTurnText = '';
+    let lastAssistantSnapshot = '';
+    let allowSnapshotRepeat = false;
+    const assistantSnapshots = new Map();
 
-    for await (const rawMessage of query({ prompt: message || '', options })) {
+    for await (const rawMessage of query({
+      prompt: buildPromptWithAttachments(message, attachments),
+      options,
+    })) {
       const msg = rawMessage || {};
       if (msg.type === 'system' && msg.session_id) {
         currentSessionId = msg.session_id;
@@ -132,13 +173,35 @@ export async function sendMessage(
 
       if (msg.type === 'assistant' && !hasToolBlock) {
         const text = asText(content);
-        if (text && !assistantText) {
-          assistantText = text;
-          emitDelta('CONTENT_DELTA', text);
+        if (text) {
+          const snapshotId = msg.uuid || msg.id || msg.message?.uuid || msg.message?.id || '';
+          const previousSnapshot = snapshotId
+            ? assistantSnapshots.get(snapshotId) || ''
+            : lastAssistantSnapshot;
+          const delta = computeAssistantSnapshotDelta(
+            text,
+            previousSnapshot,
+            currentTurnText,
+            allowSnapshotRepeat,
+          );
+          if (delta) {
+            assistantText += delta;
+            currentTurnText += delta;
+            emitDelta('CONTENT_DELTA', delta);
+          }
+          if (snapshotId) assistantSnapshots.set(snapshotId, text);
+          lastAssistantSnapshot = text;
+          allowSnapshotRepeat = false;
         }
       }
 
       if (msg.type === 'result') {
+        // A subsequent assistant snapshot may be a new turn with the same
+        // text; do not suppress it as a duplicate of the previous turn.
+        allowSnapshotRepeat = true;
+        lastAssistantSnapshot = '';
+        currentTurnText = '';
+        assistantSnapshots.clear();
         const usage = msg.usage || msg.modelUsage;
         if (usage) process.stdout.write(`[USAGE] ${JSON.stringify(usage)}\n`);
       }

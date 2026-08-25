@@ -316,21 +316,17 @@ describe('CustomModelDialog', () => {
     fireEvent.change(screen.getByLabelText('settings.codexProvider.dialog.modelLabelPlaceholder'), {
       target: { value: 'CodeBuddy Model' },
     });
-    fireEvent.change(screen.getByPlaceholderText('Vendor'), { target: { value: 'openai' } });
-    fireEvent.change(screen.getByPlaceholderText('API key or ${ENV_VAR}'), {
+    fireEvent.change(screen.getByPlaceholderText('供应商'), { target: { value: 'openai' } });
+    fireEvent.change(screen.getByPlaceholderText('API KEY'), {
       target: { value: '${OPENAI_API_KEY}' },
     });
-    fireEvent.change(screen.getByPlaceholderText('https://.../v1/chat/completions'), {
+    fireEvent.change(screen.getByPlaceholderText('BASE URL (OpenAI 兼容)'), {
       target: { value: 'https://example.test/v1/chat/completions' },
     });
-    fireEvent.change(screen.getByPlaceholderText('Max input tokens'), { target: { value: '128000' } });
-    fireEvent.change(screen.getByPlaceholderText('Max output tokens'), { target: { value: '8192' } });
-    fireEvent.change(screen.getByPlaceholderText('Temperature (0–2)'), { target: { value: '0.7' } });
-    fireEvent.change(screen.getByPlaceholderText('relatedModels JSON, e.g. {"lite":"fast-model"}'), {
-      target: { value: '{"lite":"vendor/codebuddy-lite"}' },
-    });
-    fireEvent.click(screen.getByLabelText('Supports tool calls'));
-    fireEvent.click(screen.getByLabelText('Supports reasoning'));
+    fireEvent.change(screen.getByPlaceholderText('输入（context）'), { target: { value: '128000' } });
+    fireEvent.change(screen.getByPlaceholderText('输出（max output）'), { target: { value: '8192' } });
+    fireEvent.click(screen.getByLabelText('工具调用'));
+    fireEvent.click(screen.getByLabelText('推理'));
 
     fireEvent.click(screen.getByRole('button', { name: 'common.add' }));
 
@@ -343,11 +339,9 @@ describe('CustomModelDialog', () => {
       maxInputTokens: 128000,
       maxOutputTokens: 8192,
       url: 'https://example.test/v1/chat/completions',
-      temperature: 0.7,
       supportsToolCall: true,
       supportsImages: false,
       supportsReasoning: true,
-      relatedModels: { lite: 'vendor/codebuddy-lite' },
     }]);
   });
 
@@ -368,15 +362,12 @@ describe('CustomModelDialog', () => {
     fireEvent.change(screen.getByLabelText('settings.codexProvider.dialog.modelIdPlaceholder'), {
       target: { value: 'vendor/invalid-codebuddy-model' },
     });
-    fireEvent.change(screen.getByPlaceholderText('Max input tokens'), { target: { value: '0' } });
-    fireEvent.change(screen.getByPlaceholderText('relatedModels JSON, e.g. {"lite":"fast-model"}'), {
-      target: { value: '{invalid json' },
-    });
+    fireEvent.change(screen.getByPlaceholderText('输入（context）'), { target: { value: '0' } });
 
     fireEvent.click(screen.getByRole('button', { name: 'common.add' }));
 
     expect(onModelsChange).not.toHaveBeenCalled();
-    expect(screen.getByRole('alert').textContent).toBe('Check token limits, temperature (0–2), and relatedModels JSON.');
+    expect(screen.getByRole('alert').textContent).toBe('Check token limits.');
   });
 
   it('preserves CodeBuddy fields when editing an existing model', () => {
@@ -393,11 +384,9 @@ describe('CustomModelDialog', () => {
           maxInputTokens: 200000,
           maxOutputTokens: 16000,
           url: 'https://example.test/anthropic',
-          temperature: 0.2,
           supportsToolCall: true,
           supportsImages: true,
           supportsReasoning: false,
-          relatedModels: { fast: 'vendor/fast' },
         }]}
         onModelsChange={onModelsChange}
         onClose={vi.fn()}
@@ -407,14 +396,12 @@ describe('CustomModelDialog', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'common.edit vendor/existing-codebuddy-model' }));
 
-    expect((screen.getByPlaceholderText('Vendor') as HTMLInputElement).value).toBe('anthropic');
-    expect((screen.getByPlaceholderText('Max input tokens') as HTMLInputElement).value).toBe('200000');
-    expect((screen.getByPlaceholderText('relatedModels JSON, e.g. {"lite":"fast-model"}') as HTMLTextAreaElement).value)
-      .toContain('"fast": "vendor/fast"');
-    expect((screen.getByLabelText('Supports tool calls') as HTMLInputElement).checked).toBe(true);
-    expect((screen.getByLabelText('Supports images') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByPlaceholderText('供应商') as HTMLInputElement).value).toBe('anthropic');
+    expect((screen.getByPlaceholderText('输入（context）') as HTMLInputElement).value).toBe('200000');
+    expect((screen.getByLabelText('工具调用') as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByLabelText('图片输入') as HTMLInputElement).checked).toBe(true);
 
-    fireEvent.change(screen.getByPlaceholderText('Vendor'), { target: { value: 'openai' } });
+    fireEvent.change(screen.getByPlaceholderText('供应商'), { target: { value: 'openai' } });
     fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
 
     expect(onModelsChange).toHaveBeenCalledWith([expect.objectContaining({
@@ -424,7 +411,39 @@ describe('CustomModelDialog', () => {
       maxInputTokens: 200000,
       supportsToolCall: true,
       supportsImages: true,
-      relatedModels: { fast: 'vendor/fast' },
+    })]);
+  });
+
+  it('preserves __ccguiScope when renaming a CodeBuddy model', () => {
+    const onModelsChange = vi.fn();
+
+    render(
+      <CustomModelDialog
+        isOpen
+        models={[{
+          id: 'vendor/project-scope-model',
+          label: 'Project Model',
+          __ccguiScope: 'project',
+          vendor: 'openai',
+          maxInputTokens: 128000,
+          maxOutputTokens: 8192,
+          url: 'https://example.test/v1/chat/completions',
+        }]}
+        onModelsChange={onModelsChange}
+        onClose={vi.fn()}
+        codeBuddyConfigEnabled
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'common.edit vendor/project-scope-model' }));
+    fireEvent.change(screen.getByLabelText('settings.codexProvider.dialog.modelIdPlaceholder'), {
+      target: { value: 'vendor/renamed-model' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'common.save' }));
+
+    expect(onModelsChange).toHaveBeenCalledWith([expect.objectContaining({
+      id: 'vendor/renamed-model',
+      __ccguiScope: 'project',
     })]);
   });
 });

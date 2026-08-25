@@ -228,22 +228,17 @@ public class CodeBuddyHistoryReader {
         if (sessionId == null || sessionId.isBlank() || !Files.isDirectory(projectsRoot)) {
             return null;
         }
-        Path fallback = null;
         try (Stream<Path> paths = Files.walk(projectsRoot)) {
             Iterator<Path> iterator = paths.filter(Files::isRegularFile)
                     .filter(p -> p.toString().endsWith(".jsonl")).iterator();
             while (iterator.hasNext()) {
                 Path path = iterator.next();
-                boolean filenameMatches = path.getFileName().toString().contains(sessionId);
-                if (filenameMatches) {
-                    fallback = path;
-                }
                 if (matchesSessionFile(path, sessionId, cwd)) {
                     return path;
                 }
             }
         }
-        return cwd == null || cwd.isBlank() ? fallback : null;
+        return null;
     }
 
     /** Match session metadata without loading an entire transcript into memory. */

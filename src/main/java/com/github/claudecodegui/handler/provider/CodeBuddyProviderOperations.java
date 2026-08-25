@@ -4,8 +4,8 @@ import com.github.claudecodegui.bridge.BridgeDirectoryResolver;
 import com.github.claudecodegui.bridge.EnvironmentConfigurator;
 import com.github.claudecodegui.bridge.NodeDetector;
 import com.github.claudecodegui.handler.core.HandlerContext;
+import com.github.claudecodegui.i18n.ClaudeCodeGuiBundle;
 import com.github.claudecodegui.startup.BridgePreloader;
-import com.github.claudecodegui.util.PlatformUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -85,20 +85,22 @@ public class CodeBuddyProviderOperations {
     }
 
     public void handleRevokeLocalConfig() {
-        try {
-            context.getSettingsService().setCodeBuddyLocalConfigAuthorized(false);
-            JsonObject status = buildStatus(false);
-            status.addProperty("authorized", false);
-            cacheStatus(status);
-            pushStatus(status);
-        } catch (Exception e) {
-            LOG.warn("[CodeBuddy] Failed to revoke local config authorization: " + e.getMessage());
-            JsonObject status = new JsonObject();
-            status.addProperty("success", false);
-            status.addProperty("authorized", false);
-            status.addProperty("error", e.getMessage() != null ? e.getMessage() : "revoke failed");
-            pushStatus(status);
-        }
+        AppExecutorUtil.getAppExecutorService().execute(() -> {
+            try {
+                context.getSettingsService().setCodeBuddyLocalConfigAuthorized(false);
+                JsonObject status = buildStatus(false);
+                status.addProperty("authorized", false);
+                cacheStatus(status);
+                pushStatus(status);
+            } catch (Exception e) {
+                LOG.warn("[CodeBuddy] Failed to revoke local config authorization: " + e.getMessage());
+                JsonObject status = new JsonObject();
+                status.addProperty("success", false);
+                status.addProperty("authorized", false);
+                status.addProperty("error", e.getMessage() != null ? e.getMessage() : "revoke failed");
+                pushStatus(status);
+            }
+        });
     }
 
     public void handleGetModelsConfig() {
@@ -106,13 +108,15 @@ public class CodeBuddyProviderOperations {
             JsonObject payload;
             try {
                 if (!isAuthorized()) {
-                    payload = modelsConfigError("CODEBUDDY_LOCAL_CONFIG_REQUIRED", "需要先授权 CodeBuddy 本地配置");
+                    payload = modelsConfigError("CODEBUDDY_LOCAL_CONFIG_REQUIRED",
+                            ClaudeCodeGuiBundle.message("error.codebuddyLocalConfigRequired"));
                 } else {
                     payload = readEffectiveModelsConfig();
                 }
             } catch (Exception e) {
                 LOG.warn("[CodeBuddy] Failed to read models.json: " + e.getMessage());
-                payload = modelsConfigError(null, e.getMessage() != null ? e.getMessage() : "读取 models.json 失败");
+                payload = modelsConfigError(null, e.getMessage() != null ? e.getMessage()
+                        : ClaudeCodeGuiBundle.message("error.codebuddyModelsReadFailed"));
             }
             pushModelsConfig(payload);
         });
@@ -123,7 +127,8 @@ public class CodeBuddyProviderOperations {
             JsonObject payload;
             try {
                 if (!isAuthorized()) {
-                    payload = modelsConfigError("CODEBUDDY_LOCAL_CONFIG_REQUIRED", "需要先授权 CodeBuddy 本地配置");
+                    payload = modelsConfigError("CODEBUDDY_LOCAL_CONFIG_REQUIRED",
+                            ClaudeCodeGuiBundle.message("error.codebuddyLocalConfigRequired"));
                 } else {
                     JsonObject request = content == null || content.isBlank()
                             ? new JsonObject()
@@ -134,7 +139,8 @@ public class CodeBuddyProviderOperations {
                 }
             } catch (Exception e) {
                 LOG.warn("[CodeBuddy] Failed to save models.json: " + e.getMessage());
-                payload = modelsConfigError(null, e.getMessage() != null ? e.getMessage() : "写入 models.json 失败");
+                payload = modelsConfigError(null, e.getMessage() != null ? e.getMessage()
+                        : ClaudeCodeGuiBundle.message("error.codebuddyModelsWriteFailed"));
             }
             pushModelsConfig(payload);
         });
@@ -187,7 +193,7 @@ public class CodeBuddyProviderOperations {
             }
         } else {
             status.addProperty("success", false);
-            status.addProperty("error", "CodeBuddy authentication status unavailable");
+            status.addProperty("error", ClaudeCodeGuiBundle.message("error.codebuddyAuthStatusUnavailable"));
         }
         return status;
     }
@@ -384,7 +390,7 @@ public class CodeBuddyProviderOperations {
         String configured = System.getenv("CODEBUDDY_HOME");
         String home = configured != null && !configured.isBlank()
                 ? configured.trim()
-                : PlatformUtils.getHomeDirectory() + File.separator + ".codebuddy";
+                : NodeDetector.resolveHomeForFileOps() + File.separator + ".codebuddy";
         return Path.of(home);
     }
 
@@ -456,21 +462,32 @@ public class CodeBuddyProviderOperations {
             pb.directory(bridgeDir);
             pb.redirectErrorStream(true);
             envConfigurator.updateProcessEnvironment(pb, node);
+            StringBuilder output = new StringBuilder();
             Process process = pb.start();
+            Thread readerThread = new Thread(() -> {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        synchronized (output) {
+                            if (output.length() < 64_000) {
+                                output.append(line).append('\n');
+                            }
+                        }
+                    }
+                } catch (Exception ignored) {
+                    // The process may be forcibly terminated after the timeout.
+                }
+            }, "codebuddy-auth-output-reader");
+            readerThread.setDaemon(true);
+            readerThread.start();
             boolean finished = process.waitFor(AUTH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
+                readerThread.join(2_000L);
                 return error("CodeBuddy authentication check timed out");
             }
-
-            StringBuilder output = new StringBuilder();
-            try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = reader.readLine()) != null && output.length() < 64_000) {
-                    output.append(line).append('\n');
-                }
-            }
+            readerThread.join(2_000L);
             return extractJsonObject(output.toString());
         } catch (Exception e) {
             LOG.warn("[CodeBuddy] Authentication status check failed: " + e.getMessage());

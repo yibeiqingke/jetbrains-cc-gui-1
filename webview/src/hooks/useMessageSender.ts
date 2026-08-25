@@ -28,7 +28,10 @@ function createContextUsageRequestId(): string {
   return `context-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function shouldSendReasoningEffort(provider: string, model: string): boolean {
+function shouldSendReasoningEffort(provider: string, model: string, effort: ReasoningEffort): boolean {
+  if (effort === 'minimal' && provider !== 'codebuddy') {
+    return false;
+  }
   if (provider !== 'claude') {
     return true;
   }
@@ -266,7 +269,7 @@ export function useMessageSender({
       effectiveMode: effectivePermissionMode,
     });
 
-    const reasoningEffortPayload = shouldSendReasoningEffort(currentProvider, selectedModel)
+    const reasoningEffortPayload = shouldSendReasoningEffort(currentProvider, selectedModel, reasoningEffort)
       ? { reasoningEffort }
       : {};
 

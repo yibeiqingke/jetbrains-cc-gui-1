@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProviderConfig, CodexProviderConfig } from '../../../types/provider';
 import { STORAGE_KEYS } from '../../../types/provider';
@@ -99,6 +99,12 @@ const ProviderTabSection = ({
     : dialogTarget === 'codex'
       ? codexModels
       : codeBuddyModels;
+
+  useEffect(() => {
+    if (modelDialogOpen && dialogTarget === 'codebuddy') {
+      codeBuddyModels.refresh();
+    }
+  }, [codeBuddyModels.refresh, dialogTarget, modelDialogOpen]);
 
   return (
     <div className={styles.providerTabSection}>

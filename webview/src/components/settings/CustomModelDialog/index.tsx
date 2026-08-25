@@ -150,30 +150,6 @@ function parseOptionalInteger(value: string): number | undefined {
     : undefined;
 }
 
-function parseOptionalTemperature(value: string): number | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 2 ? parsed : undefined;
-}
-
-function parseRelatedModels(value: string): Record<string, string> | undefined {
-  if (!value.trim()) return undefined;
-  try {
-    const parsed = JSON.parse(value) as unknown;
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return undefined;
-    const entries = Object.entries(parsed as Record<string, unknown>)
-      .filter(([, target]) => typeof target === 'string' && target.trim());
-    return entries.length > 0 ? Object.fromEntries(entries) as Record<string, string> : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function formatRelatedModels(value?: Record<string, string>): string {
-  return value ? JSON.stringify(value, null, 2) : '';
-}
-
 /**
  * Custom Model Management Dialog
  * Full CRUD for plugin-level custom models in a modal dialog
@@ -203,11 +179,9 @@ export function CustomModelDialog({
   const [newMaxInputTokens, setNewMaxInputTokens] = useState('');
   const [newMaxOutputTokens, setNewMaxOutputTokens] = useState('');
   const [newUrl, setNewUrl] = useState('');
-  const [newTemperature, setNewTemperature] = useState('');
   const [newSupportsToolCall, setNewSupportsToolCall] = useState(false);
   const [newSupportsImages, setNewSupportsImages] = useState(false);
   const [newSupportsReasoning, setNewSupportsReasoning] = useState(false);
-  const [newRelatedModels, setNewRelatedModels] = useState('');
   const [newContextWindowK, setNewContextWindowK] = useState('');
   const [newPricingInputs, setNewPricingInputs] = useState<Record<PricingFieldKey, string>>({ ...EMPTY_PRICING_INPUTS });
   const [modelIdError, setModelIdError] = useState<string | null>(null);
@@ -229,11 +203,9 @@ export function CustomModelDialog({
     setNewMaxInputTokens('');
     setNewMaxOutputTokens('');
     setNewUrl('');
-    setNewTemperature('');
     setNewSupportsToolCall(false);
     setNewSupportsImages(false);
     setNewSupportsReasoning(false);
-    setNewRelatedModels('');
     setNewContextWindowK('');
     setNewPricingInputs({ ...EMPTY_PRICING_INPUTS });
     setModelIdError(null);
@@ -315,15 +287,13 @@ export function CustomModelDialog({
     if (!codeBuddyConfigEnabled) return null;
     const invalidInteger = [newMaxInputTokens, newMaxOutputTokens].some((value) =>
       value.trim() !== '' && parseOptionalInteger(value) === undefined);
-    const invalidTemperature = newTemperature.trim() !== '' && parseOptionalTemperature(newTemperature) === undefined;
-    const invalidRelatedModels = newRelatedModels.trim() !== '' && parseRelatedModels(newRelatedModels) === undefined;
-    if (invalidInteger || invalidTemperature || invalidRelatedModels) {
+    if (invalidInteger) {
       return t('settings.codebuddyProvider.invalidModelConfig', {
-        defaultValue: 'Check token limits, temperature (0–2), and relatedModels JSON.',
+        defaultValue: 'Check token limits.',
       });
     }
     return null;
-  }, [codeBuddyConfigEnabled, newMaxInputTokens, newMaxOutputTokens, newRelatedModels, newTemperature, t]);
+  }, [codeBuddyConfigEnabled, newMaxInputTokens, newMaxOutputTokens, t]);
 
   const buildModelFromForm = useCallback((): CodexCustomModel => {
     const sanitizedId = sanitizeInput(newModelId).trim();
@@ -340,18 +310,15 @@ export function CustomModelDialog({
     if (codeBuddyConfigEnabled) {
       const maxInputTokens = parseOptionalInteger(newMaxInputTokens);
       const maxOutputTokens = parseOptionalInteger(newMaxOutputTokens);
-      const temperature = parseOptionalTemperature(newTemperature);
       Object.assign(model, {
         vendor: newVendor.trim() || undefined,
         apiKey: newApiKey.trim() || undefined,
         maxInputTokens,
         maxOutputTokens,
         url: newUrl.trim() || undefined,
-        temperature,
         supportsToolCall: newSupportsToolCall,
         supportsImages: newSupportsImages,
         supportsReasoning: newSupportsReasoning,
-        relatedModels: parseRelatedModels(newRelatedModels),
       });
     }
 
@@ -360,7 +327,7 @@ export function CustomModelDialog({
     }
 
     return pricing ? { ...model, pricing } : model;
-  }, [codeBuddyConfigEnabled, contextWindowEnabled, newApiKey, newContextWindowK, newMaxInputTokens, newMaxOutputTokens, newModelDesc, newModelId, newModelLabel, newPricingInputs, newRelatedModels, newSupportsImages, newSupportsReasoning, newSupportsToolCall, newTemperature, newUrl, newVendor]);
+  }, [codeBuddyConfigEnabled, contextWindowEnabled, newApiKey, newContextWindowK, newMaxInputTokens, newMaxOutputTokens, newModelDesc, newModelId, newModelLabel, newPricingInputs, newSupportsImages, newSupportsReasoning, newSupportsToolCall, newUrl, newVendor]);
 
   const validateForm = useCallback((): boolean => {
     if (editingConfiguredModel) {
@@ -384,6 +351,7 @@ export function CustomModelDialog({
       setModelIdError(idError);
       setContextWindowError(null);
       setPricingError(null);
+      setCodeBuddyConfigError(null);
       return false;
     }
 
@@ -410,6 +378,7 @@ export function CustomModelDialog({
       setModelIdError(null);
       setContextWindowError(null);
       setPricingError(priceError);
+      setCodeBuddyConfigError(null);
       return false;
     }
 
@@ -432,7 +401,13 @@ export function CustomModelDialog({
   const handleSaveEdit = useCallback(() => {
     if (!editingModel || !validateForm()) return;
 
-    const updatedModel = buildModelFromForm();
+    // Preserve the original scope when renaming: buildModelFromForm() produces a
+    // fresh object without __ccguiScope, so without copying it here a renamed
+    // project-scope model would fall back to 'user' in useCodeBuddyModelsConfig.
+    const updatedModel = {
+      ...buildModelFromForm(),
+      __ccguiScope: editingModel.__ccguiScope,
+    };
     const updatedModels = models.map(m => (m.id === editingModel.id ? updatedModel : m));
     onModelsChange(updatedModels);
     resetForm();
@@ -456,11 +431,9 @@ export function CustomModelDialog({
     setNewMaxInputTokens(model.maxInputTokens === undefined ? '' : String(model.maxInputTokens));
     setNewMaxOutputTokens(model.maxOutputTokens === undefined ? '' : String(model.maxOutputTokens));
     setNewUrl(model.url || '');
-    setNewTemperature(model.temperature === undefined ? '' : String(model.temperature));
     setNewSupportsToolCall(model.supportsToolCall ?? false);
     setNewSupportsImages(model.supportsImages ?? false);
     setNewSupportsReasoning(model.supportsReasoning ?? false);
-    setNewRelatedModels(formatRelatedModels(model.relatedModels));
     setNewContextWindowK(!contextWindowEnabled || model.contextWindowTokens === undefined
       ? ''
       : String(model.contextWindowTokens / CONTEXT_WINDOW_TOKENS_PER_K));
@@ -713,36 +686,38 @@ export function CustomModelDialog({
 
               {codeBuddyConfigEnabled && !isEditingConfiguredModel && (
                 <div className={styles.codeBuddyConfigSection}>
-                  <div className={styles.formRow}>
-                    <input
-                      type="text"
-                      className="form-input"
-                      placeholder={t('settings.codebuddyProvider.vendorPlaceholder', { defaultValue: 'Vendor' })}
-                      value={newVendor}
-                      onChange={(e) => setNewVendor(e.target.value)}
-                    />
-                    <input
-                      type="password"
-                      className="form-input"
-                      placeholder={t('settings.codebuddyProvider.apiKeyPlaceholder', { defaultValue: 'API key or ${ENV_VAR}' })}
-                      value={newApiKey}
-                      onChange={(e) => setNewApiKey(e.target.value)}
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder={t('settings.codebuddyProvider.vendorPlaceholder', { defaultValue: '供应商' })}
+                    value={newVendor}
+                    onChange={(e) => setNewVendor(e.target.value)}
+                  />
                   <input
                     type="url"
                     className="form-input"
-                    placeholder={t('settings.codebuddyProvider.urlPlaceholder', { defaultValue: 'https://.../v1/chat/completions' })}
+                    placeholder={t('settings.codebuddyProvider.urlPlaceholder', { defaultValue: 'BASE URL (OpenAI 兼容)' })}
                     value={newUrl}
                     onChange={(e) => setNewUrl(e.target.value)}
-                    style={DESC_INPUT_STYLE}
                   />
+                  <input
+                    type="password"
+                    className="form-input"
+                    placeholder={t('settings.codebuddyProvider.apiKeyPlaceholder', { defaultValue: 'API KEY' })}
+                    value={newApiKey}
+                    onChange={(e) => setNewApiKey(e.target.value)}
+                  />
+                  <div className={styles.checkboxGrid}>
+                    <label><input type="checkbox" checked={newSupportsToolCall} onChange={(e) => setNewSupportsToolCall(e.target.checked)} /> {t('settings.codebuddyProvider.supportsToolCall', { defaultValue: '工具调用' })}</label>
+                    <label><input type="checkbox" checked={newSupportsImages} onChange={(e) => setNewSupportsImages(e.target.checked)} /> {t('settings.codebuddyProvider.supportsImages', { defaultValue: '图片输入' })}</label>
+                    <label><input type="checkbox" checked={newSupportsReasoning} onChange={(e) => setNewSupportsReasoning(e.target.checked)} /> {t('settings.codebuddyProvider.supportsReasoning', { defaultValue: '推理' })}</label>
+                  </div>
                   <div className={styles.formRow}>
                     <input
                       type="number"
                       min="1"
                       className="form-input"
-                      placeholder={t('settings.codebuddyProvider.maxInputTokensPlaceholder', { defaultValue: 'Max input tokens' })}
+                      placeholder={t('settings.codebuddyProvider.maxInputTokensPlaceholder', { defaultValue: '输入（context）' })}
                       value={newMaxInputTokens}
                       onChange={(e) => setNewMaxInputTokens(e.target.value)}
                     />
@@ -750,32 +725,10 @@ export function CustomModelDialog({
                       type="number"
                       min="1"
                       className="form-input"
-                      placeholder={t('settings.codebuddyProvider.maxOutputTokensPlaceholder', { defaultValue: 'Max output tokens' })}
+                      placeholder={t('settings.codebuddyProvider.maxOutputTokensPlaceholder', { defaultValue: '输出（max output）' })}
                       value={newMaxOutputTokens}
                       onChange={(e) => setNewMaxOutputTokens(e.target.value)}
                     />
-                    <input
-                      type="number"
-                      min="0"
-                      max="2"
-                      step="0.1"
-                      className="form-input"
-                      placeholder={t('settings.codebuddyProvider.temperaturePlaceholder', { defaultValue: 'Temperature (0–2)' })}
-                      value={newTemperature}
-                      onChange={(e) => setNewTemperature(e.target.value)}
-                    />
-                  </div>
-                  <textarea
-                    className="form-input"
-                    rows={2}
-                    placeholder={t('settings.codebuddyProvider.relatedModelsPlaceholder', { defaultValue: 'relatedModels JSON, e.g. {"lite":"fast-model"}' })}
-                    value={newRelatedModels}
-                    onChange={(e) => setNewRelatedModels(e.target.value)}
-                  />
-                  <div className={styles.checkboxGrid}>
-                    <label><input type="checkbox" checked={newSupportsToolCall} onChange={(e) => setNewSupportsToolCall(e.target.checked)} /> {t('settings.codebuddyProvider.supportsToolCall', { defaultValue: 'Supports tool calls' })}</label>
-                    <label><input type="checkbox" checked={newSupportsImages} onChange={(e) => setNewSupportsImages(e.target.checked)} /> {t('settings.codebuddyProvider.supportsImages', { defaultValue: 'Supports images' })}</label>
-                    <label><input type="checkbox" checked={newSupportsReasoning} onChange={(e) => setNewSupportsReasoning(e.target.checked)} /> {t('settings.codebuddyProvider.supportsReasoning', { defaultValue: 'Supports reasoning' })}</label>
                   </div>
                   <p className={styles.fieldHint}>
                     {t('settings.codebuddyProvider.modelsJsonHint', { defaultValue: 'Saved directly to CodeBuddy models.json. API key may use ${ENV_VAR}.' })}

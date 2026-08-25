@@ -43,10 +43,6 @@ export const STORAGE_KEYS = {
   CLAUDE_MODEL_MAPPING: 'claude-model-mapping',
   /** Custom Claude model list */
   CLAUDE_CUSTOM_MODELS: 'claude-custom-models',
-  /** CodeBuddy models hidden from the plugin model picker by the user */
-  CODEBUDDY_HIDDEN_MODELS: 'codebuddy-hidden-models',
-  /** Custom CodeBuddy model list */
-  CODEBUDDY_CUSTOM_MODELS: 'codebuddy-custom-models',
   /** Pricing for Claude models configured by provider/settings.json, not shown as custom models */
   CLAUDE_CONFIGURED_MODEL_PRICING: 'claude-configured-model-pricing',
 } as const;

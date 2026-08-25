@@ -29,6 +29,7 @@ export interface ResolveProviderModelsInput {
   cliRoles?: ModelInfo[];
   claudeCustomModels?: ModelInfo[];
   codexCustomModels?: ModelInfo[];
+  codeBuddyCustomModels?: ModelInfo[];
   claudeMapping?: ClaudeModelMapping | null;
 }
 
@@ -47,6 +48,7 @@ export function resolveProviderModels({
   cliRoles,
   claudeCustomModels = [],
   codexCustomModels = [],
+  codeBuddyCustomModels = [],
   claudeMapping = null,
 }: ResolveProviderModelsInput): ModelInfo[] {
   if (provider === 'codex') {
@@ -64,7 +66,20 @@ export function resolveProviderModels({
   }
 
   if (provider === 'codebuddy') {
-    return cliModels;
+    const merged = [...codeBuddyCustomModels, ...cliModels];
+    const seenIds = new Set<string>();
+    return merged.filter((model) => {
+      // The CodeBuddy SDK exposes models.json entries as "custom-local:<id>".
+      // Collapse that prefix so a model defined in models.json isn't listed
+      // twice (once from models.json, once from the dynamic catalog). The
+      // models.json copy is first, so it wins on collision.
+      const key = model.id.startsWith('custom-local:')
+        ? model.id.slice('custom-local:'.length)
+        : model.id;
+      if (seenIds.has(key)) return false;
+      seenIds.add(key);
+      return true;
+    });
   }
 
   if (provider === 'kimi' || provider === 'opencode' || provider === 'pi' || provider === 'dsh') {

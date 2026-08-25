@@ -95,10 +95,6 @@ function normalizeModels(raw: unknown): ModelInfo[] {
     const reasoningSupported = typeof row.reasoningSupported === 'boolean'
       ? row.reasoningSupported
       : undefined;
-    const defaultEffort = typeof row.defaultEffort === 'string'
-      && ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'].includes(row.defaultEffort)
-      ? row.defaultEffort as ModelInfo['defaultEffort']
-      : undefined;
     out.push({
       id,
       label,
@@ -106,7 +102,6 @@ function normalizeModels(raw: unknown): ModelInfo[] {
       credits,
       ...(supportedEfforts?.length ? { supportedEfforts } : {}),
       ...(reasoningSupported !== undefined ? { reasoningSupported } : {}),
-      ...(defaultEffort ? { defaultEffort } : {}),
     });
   }
   return out;

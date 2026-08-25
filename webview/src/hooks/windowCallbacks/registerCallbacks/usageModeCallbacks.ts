@@ -150,8 +150,9 @@ export function registerUsageModeCallbacks(options: UseWindowCallbacksOptions): 
 
       updateMode(state.permissionMode as PermissionMode | undefined, provider);
 
-      const reasoningValues: ReasoningEffort[] = ['low', 'medium', 'high', 'xhigh', 'max'];
-      if (reasoningValues.includes(state.reasoningEffort as ReasoningEffort)) {
+      const reasoningValues: ReasoningEffort[] = ['minimal', 'low', 'medium', 'high', 'xhigh', 'max'];
+      if (reasoningValues.includes(state.reasoningEffort as ReasoningEffort)
+        && (state.reasoningEffort !== 'minimal' || provider === 'codebuddy')) {
         setReasoningEffort(state.reasoningEffort as ReasoningEffort);
       }
       if (state.codexFastMode === 'normal' || state.codexFastMode === 'fast') {

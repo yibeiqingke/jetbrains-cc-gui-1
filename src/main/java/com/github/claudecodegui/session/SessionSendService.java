@@ -413,13 +413,13 @@ public class SessionSendService {
             try {
                 if (!new CodemossSettingsService().isCodeBuddyLocalConfigAuthorized()) {
                     MessageCallback accessHandler = createCliMessageHandler(provider);
-                    accessHandler.onError("需要使用本地配置信息");
+                    accessHandler.onError(ClaudeCodeGuiBundle.message("error.codebuddyLocalConfigRequired"));
                     return CompletableFuture.completedFuture(null);
                 }
             } catch (Exception e) {
                 LOG.warn("[CodeBuddy] Failed to resolve local config authorization: " + e.getMessage());
                 MessageCallback accessHandler = createCliMessageHandler(provider);
-                accessHandler.onError("需要使用本地配置信息");
+                accessHandler.onError(ClaudeCodeGuiBundle.message("error.codebuddyLocalConfigRequired"));
                 return CompletableFuture.completedFuture(null);
             }
         }

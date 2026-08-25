@@ -636,17 +636,15 @@
       "deleteModel": "删除模型 {{name}}",
       "modelDeleted": "已删除模型 {{name}}",
       "vendorPlaceholder": "供应商",
-      "apiKeyPlaceholder": "API 密钥或 ${ENV_VAR}",
-      "urlPlaceholder": "https://.../v1/chat/completions",
-      "maxInputTokensPlaceholder": "最大输入 Token",
-      "maxOutputTokensPlaceholder": "最大输出 Token",
-      "temperaturePlaceholder": "温度（0–2）",
-      "relatedModelsPlaceholder": "relatedModels JSON，例如 {\"lite\":\"fast-model\"}",
-      "supportsToolCall": "支持工具调用",
-      "supportsImages": "支持图片输入",
-      "supportsReasoning": "支持推理模式",
+      "apiKeyPlaceholder": "API KEY",
+      "urlPlaceholder": "BASE URL (OpenAI 兼容)",
+      "maxInputTokensPlaceholder": "输入（context）",
+      "maxOutputTokensPlaceholder": "输出（max output）",
+      "supportsToolCall": "工具调用",
+      "supportsImages": "图片输入",
+      "supportsReasoning": "推理",
       "modelsJsonHint": "将直接保存到 CodeBuddy models.json；API 密钥支持 ${ENV_VAR}。",
-      "invalidModelConfig": "请检查 Token 上限、温度（0–2）和 relatedModels JSON。"
+      "invalidModelConfig": "请检查 Token 上限。"
     },
     "cli": {
       "hint": "以下 CLI 需在系统终端自行安装并完成配置。插件只负责检测是否已安装及版本号，不会替你自动安装。请先在终端确认可正常使用，再回到此处使用。",
@@ -2300,6 +2298,10 @@
   },
   "reasoning": {
     "title": "选择思考深度",
+    "minimal": {
+      "label": "极简",
+      "description": "以最少推理换取最快响应"
+    },
     "low": {
       "label": "low",
       "description": "快速响应，基础推理"

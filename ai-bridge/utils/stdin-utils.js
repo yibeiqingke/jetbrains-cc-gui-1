@@ -1,6 +1,7 @@
 /**
  * Stdin reader utility module (unified version).
- * Supports Claude SDK, Codex SDK, and CLI channels (Grok / Kimi / OpenCode).
+ * Supports Claude/Codex SDKs and all CLI channels (CodeBuddy / Grok / Kimi /
+ * OpenCode / PI / OMP / DSH).
  */
 
 const STDIN_ENV_BY_PROVIDER = {
@@ -24,7 +25,7 @@ function stdinEnvKeyForProvider(provider) {
 
 /**
  * Read JSON data from stdin.
- * @param {string} provider - 'claude' | 'codex' | 'grok' | 'kimi' | 'opencode'
+ * @param {string} provider - provider id used by channel-manager
  * @returns {Promise<Object|null>} The parsed JSON object, or null
  */
 export async function readStdinData(provider = 'claude') {

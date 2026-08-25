@@ -71,6 +71,9 @@ export const ReasoningSelect = ({ value, onChange, disabled, selectedModel, curr
       return !selectedModelInfo?.supportedEfforts
         || selectedModelInfo.supportedEfforts.includes(level.id);
     }
+    if (level.id === 'minimal') {
+      return false;
+    }
     if (currentProvider === 'codex') {
       return level.id !== 'max' || (selectedModel !== undefined && codexModelSupportsMaxEffort(selectedModel));
     }
