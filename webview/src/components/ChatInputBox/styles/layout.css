@@ -61,6 +61,62 @@
   box-shadow: none;
 }
 
+/* Notion Minimal Dock */
+[data-ui-theme="notion"] .chat-input-box {
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: none;
+}
+
+/* Arc Glass Dock */
+[data-ui-theme="arcGlass"] .chat-input-box {
+  border-radius: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* Warp Terminal Dock */
+[data-ui-theme="warp"] .chat-input-box {
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Vercel Clean Dock */
+[data-ui-theme="vercel"] .chat-input-box {
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Claude Warm Dock */
+[data-ui-theme="claudeWarm"] .chat-input-box {
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: none;
+}
+
+/* Solarized Dock */
+[data-ui-theme="solarized"] .chat-input-box {
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: none;
+}
+
+/* Custom Theme Dock */
+[data-ui-theme="custom"] .chat-input-box {
+  border-radius: calc(8px * var(--custom-radius-scale, 1));
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  box-shadow: none;
+}
+
 /* Show blue border glow effect on hover */
 .chat-input-box:hover {
   border-color: var(--input-focus-border);

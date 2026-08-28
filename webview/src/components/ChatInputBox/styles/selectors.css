@@ -59,6 +59,51 @@
   background: var(--bg-tertiary);
 }
 
+/* Notion Minimal Pill */
+[data-ui-theme="notion"] .selector-button {
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+}
+
+/* Arc Glass Pill */
+[data-ui-theme="arcGlass"] .selector-button {
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+}
+
+/* Warp Terminal Pill */
+[data-ui-theme="warp"] .selector-button {
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+}
+
+/* Vercel Pill */
+[data-ui-theme="vercel"] .selector-button {
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+}
+
+/* Claude Warm Pill */
+[data-ui-theme="claudeWarm"] .selector-button {
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+}
+
+/* Solarized Pill */
+[data-ui-theme="solarized"] .selector-button {
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+}
+
+/* Custom Theme Pill */
+[data-ui-theme="custom"] .selector-button {
+  border-radius: calc(4px * var(--custom-radius-scale, 1));
+  background: var(--bg-tertiary);
+}
+
 /* Compact provider icon button */
 .selector-button.provider-compact {
   padding: 4px 5px;
