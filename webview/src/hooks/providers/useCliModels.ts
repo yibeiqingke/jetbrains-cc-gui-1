@@ -163,6 +163,11 @@ export function useCliModels(currentProvider: string) {
   }, []);
 
   const beginLoad = useCallback((providerId: string) => {
+    // A request for this provider is already in flight — Java collapses
+    // concurrent get_cli_models anyway; don't pile on duplicate spawns. The
+    // invalidate paths below clear pendingLoadRef first, so a forced refetch
+    // after a settings edit always gets through.
+    if (pendingLoadRef.current?.provider === providerId) return;
     clearPendingLoad();
     setLoadingProvider(providerId);
     setErrorByProvider((prev) => {
@@ -308,10 +313,13 @@ export function useCliModels(currentProvider: string) {
         return next;
       });
       if (currentProvider === 'codex') {
+        // Clear an in-flight request so the post-switch refetch is never
+        // swallowed by the beginLoad pending guard.
+        clearPendingLoad();
         beginLoad('codex');
       }
     });
-  }, [currentProvider, beginLoad]);
+  }, [currentProvider, beginLoad, clearPendingLoad]);
 
   // Editing models.json in Settings changes what the CodeBuddy SDK serves, so
   // the cached catalog must be dropped when the user returns to chat —
@@ -338,12 +346,15 @@ export function useCliModels(currentProvider: string) {
         return next;
       });
       if (currentProvider === 'codebuddy') {
+        // A pre-save request may still be pending — drop it so the refetch
+        // forced by this invalidation isn't swallowed by the pending guard.
+        clearPendingLoad();
         beginLoad('codebuddy');
       }
     };
     window.addEventListener('codebuddy-models-config-changed', invalidate);
     return () => window.removeEventListener('codebuddy-models-config-changed', invalidate);
-  }, [currentProvider, beginLoad]);
+  }, [currentProvider, beginLoad, clearPendingLoad]);
 
   const refreshCliModels = useCallback((providerId: string) => {
     if (!supportsDynamicModels(providerId)) return;

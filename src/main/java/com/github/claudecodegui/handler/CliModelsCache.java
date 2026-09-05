@@ -22,14 +22,28 @@ import java.util.function.LongSupplier;
  * The 3-minute TTL is comfortably shorter than how often a user edits
  * models.json by hand, and any in-GUI edit bypasses it via invalidation.
  *
+ * <p>The clock is {@link System#nanoTime}, so wall-clock jumps (NTP sync,
+ * manual changes) cannot extend or shorten the TTL; values are only ever
+ * compared for elapsed time.
+ *
+ * <p>Stale-while-revalidate: {@link #getStale} serves an expired entry so the
+ * picker stays instant while the caller refreshes; the fresh payload then
+ * replaces it. Only {@link #get} guarantees freshness.
+ *
+ * <p>Generations guard against a cold start that races an invalidation: every
+ * invalidate bumps the provider's generation, and a {@link #put} carrying an
+ * older generation is dropped — a request that started before models.json was
+ * saved can never re-pollute the cache after the invalidation.
+ *
  * <p>Invalidation points: {@link CodeBuddyProviderOperations} drops the
  * codebuddy entry whenever models.json is saved or local-config consent is
  * revoked. Externally edited files (outside the GUI) rely on the TTL.
  */
 public final class CliModelsCache {
 
-    private static final long DEFAULT_TTL_MILLIS = 180_000L;
-    private static final LongSupplier SYSTEM_CLOCK = System::currentTimeMillis;
+    /** 3 minutes, in nanoseconds — the clock is {@link System#nanoTime}-based. */
+    private static final long DEFAULT_TTL_NANOS = 180_000_000_000L;
+    private static final LongSupplier MONOTONIC_CLOCK = System::nanoTime;
 
     /**
      * Only providers whose catalog is derived from local config files with an
@@ -38,11 +52,13 @@ public final class CliModelsCache {
      */
     private static final Set<String> CACHEABLE_PROVIDERS = Set.of("codebuddy");
 
-    private static final CliModelsCache SHARED = new CliModelsCache(DEFAULT_TTL_MILLIS, SYSTEM_CLOCK);
+    private static final CliModelsCache SHARED = new CliModelsCache(DEFAULT_TTL_NANOS, MONOTONIC_CLOCK);
 
-    private final long ttlMillis;
+    private final long ttlNanos;
     private final LongSupplier clock;
     private final Map<String, Entry> entries = new ConcurrentHashMap<>();
+    /** Bumped on every invalidate; puts from requests started before the bump are ignored. */
+    private final Map<String, Long> generations = new ConcurrentHashMap<>();
 
     private static final class Entry {
         final String payload;
@@ -54,8 +70,8 @@ public final class CliModelsCache {
         }
     }
 
-    CliModelsCache(long ttlMillis, LongSupplier clock) {
-        this.ttlMillis = ttlMillis;
+    CliModelsCache(long ttlNanos, LongSupplier clock) {
+        this.ttlNanos = ttlNanos;
         this.clock = clock;
     }
 
@@ -64,29 +80,56 @@ public final class CliModelsCache {
         return SHARED.getInternal(provider);
     }
 
-    /** Caches a successful payload; silently ignored for non-cacheable providers. */
-    public static void put(String provider, String payload) {
-        SHARED.putInternal(provider, payload);
+    /**
+     * Returns the payload for {@code provider} even when expired
+     * (stale-while-revalidate), or null when absent/not cacheable. Callers
+     * must follow up with a fresh fetch — this only keeps the picker instant.
+     */
+    public static String getStale(String provider) {
+        return SHARED.getStaleInternal(provider);
     }
 
-    /** Drops the cached payload for {@code provider} (no-op when nothing is cached). */
+    /** Current invalidation generation for {@code provider} (0 before the first invalidate). */
+    public static long generation(String provider) {
+        return SHARED.generationInternal(provider);
+    }
+
+    /**
+     * Caches a successful payload; silently ignored for non-cacheable
+     * providers or when {@code generation} no longer matches (an invalidate
+     * superseded the request that produced this payload).
+     */
+    public static void put(String provider, String payload, long generation) {
+        SHARED.putInternal(provider, payload, generation);
+    }
+
+    /** Drops the cached payload for {@code provider} and bumps its generation (no-op when nothing is cached). */
     public static void invalidate(String provider) {
         SHARED.invalidateInternal(provider);
     }
 
     String getInternal(String provider) {
+        Entry entry = freshEntry(provider);
+        return entry != null ? entry.payload : null;
+    }
+
+    String getStaleInternal(String provider) {
         if (provider == null || !CACHEABLE_PROVIDERS.contains(provider)) {
             return null;
         }
         Entry entry = entries.get(provider);
-        if (entry == null || clock.getAsLong() - entry.storedAt > ttlMillis) {
-            return null;
-        }
-        return entry.payload;
+        return entry != null ? entry.payload : null;
     }
 
-    void putInternal(String provider, String payload) {
+    long generationInternal(String provider) {
+        return provider == null ? 0L : generations.getOrDefault(provider, 0L);
+    }
+
+    void putInternal(String provider, String payload, long generation) {
         if (provider == null || payload == null || !CACHEABLE_PROVIDERS.contains(provider)) {
+            return;
+        }
+        if (generationInternal(provider) != generation) {
             return;
         }
         entries.put(provider, new Entry(payload, clock.getAsLong()));
@@ -97,5 +140,17 @@ public final class CliModelsCache {
             return;
         }
         entries.remove(provider);
+        generations.merge(provider, 1L, Long::sum);
+    }
+
+    private Entry freshEntry(String provider) {
+        if (provider == null || !CACHEABLE_PROVIDERS.contains(provider)) {
+            return null;
+        }
+        Entry entry = entries.get(provider);
+        if (entry == null || clock.getAsLong() - entry.storedAt > ttlNanos) {
+            return null;
+        }
+        return entry;
     }
 }
