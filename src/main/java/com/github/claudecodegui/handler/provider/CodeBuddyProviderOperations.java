@@ -40,6 +40,8 @@ public class CodeBuddyProviderOperations {
     private static final long AUTH_TIMEOUT_SECONDS = 12L;
     private static final long STATUS_CACHE_TTL_MILLIS = 30_000L;
     private static final String MODELS_CONFIG_CALLBACK = "window.updateCodeBuddyModelsConfig";
+    /** Serializes models.json writes — saves run on the shared app pool. */
+    private static final Object MODELS_FILE_LOCK = new Object();
 
     private final HandlerContext context;
     private final NodeDetector nodeDetector = NodeDetector.getInstance();
@@ -127,25 +129,29 @@ public class CodeBuddyProviderOperations {
     public void handleSaveModelsConfig(String content) {
         AppExecutorUtil.getAppExecutorService().execute(() -> {
             JsonObject payload;
-            try {
-                if (!isAuthorized()) {
-                    payload = modelsConfigError("CODEBUDDY_LOCAL_CONFIG_REQUIRED",
-                            ClaudeCodeGuiBundle.message("error.codebuddyLocalConfigRequired"));
-                } else {
-                    JsonObject request = content == null || content.isBlank()
-                            ? new JsonObject()
-                            : GSON.fromJson(content, JsonObject.class);
-                    applyModelsConfigChanges(request);
-                    // The post-save refetch must see the edited models.json,
-                    // not the TTL-cached get_cli_models catalog.
-                    CliModelsCache.invalidate("codebuddy");
-                    payload = readEffectiveModelsConfig();
-                    payload.addProperty("saved", true);
+            // Saves run on the shared app pool; two overlapping saves would
+            // otherwise interleave writes to the same models.json.tmp file.
+            synchronized (MODELS_FILE_LOCK) {
+                try {
+                    if (!isAuthorized()) {
+                        payload = modelsConfigError("CODEBUDDY_LOCAL_CONFIG_REQUIRED",
+                                ClaudeCodeGuiBundle.message("error.codebuddyLocalConfigRequired"));
+                    } else {
+                        JsonObject request = content == null || content.isBlank()
+                                ? new JsonObject()
+                                : GSON.fromJson(content, JsonObject.class);
+                        applyModelsConfigChanges(request);
+                        // The post-save refetch must see the edited models.json,
+                        // not the TTL-cached get_cli_models catalog.
+                        CliModelsCache.invalidate("codebuddy");
+                        payload = readEffectiveModelsConfig();
+                        payload.addProperty("saved", true);
+                    }
+                } catch (Exception e) {
+                    LOG.warn("[CodeBuddy] Failed to save models.json: " + e.getMessage());
+                    payload = modelsConfigError(null, e.getMessage() != null ? e.getMessage()
+                            : ClaudeCodeGuiBundle.message("error.codebuddyModelsWriteFailed"));
                 }
-            } catch (Exception e) {
-                LOG.warn("[CodeBuddy] Failed to save models.json: " + e.getMessage());
-                payload = modelsConfigError(null, e.getMessage() != null ? e.getMessage()
-                        : ClaudeCodeGuiBundle.message("error.codebuddyModelsWriteFailed"));
             }
             pushModelsConfig(payload);
         });

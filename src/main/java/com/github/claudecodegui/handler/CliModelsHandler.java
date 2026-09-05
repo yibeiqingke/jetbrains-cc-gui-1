@@ -51,6 +51,20 @@ public class CliModelsHandler extends BaseMessageHandler {
      */
     private static final ConcurrentHashMap<String, CompletableFuture<Void>> IN_FLIGHT = new ConcurrentHashMap<>();
 
+    /**
+     * Dedicated pool for cold-start fetches. Followers block in
+     * {@link CompletableFuture#join}/{@code get} on the app executor while
+     * waiting for the leader, so running the leader on that same bounded pool
+     * could starve it of threads entirely; this pool guarantees the leader
+     * always gets a thread no matter how many followers are parked.
+     */
+    private static final java.util.concurrent.ExecutorService FETCH_EXECUTOR =
+            java.util.concurrent.Executors.newCachedThreadPool(r -> {
+                Thread thread = new Thread(r, "cli-models-fetch");
+                thread.setDaemon(true);
+                return thread;
+            });
+
     private static final String[] SUPPORTED_TYPES = {
             "get_cli_models",
     };
@@ -114,7 +128,7 @@ public class CliModelsHandler extends BaseMessageHandler {
             CompletableFuture<Void> created = new CompletableFuture<>();
             String flightKey = provider + "#" + generation;
             CompletableFuture<Void> flight = IN_FLIGHT.computeIfAbsent(flightKey, k -> {
-                AppExecutorUtil.getAppExecutorService().execute(() -> {
+                FETCH_EXECUTOR.execute(() -> {
                     try {
                         fetchAndPushModels(provider, generation);
                     } catch (Exception e) {
@@ -131,8 +145,14 @@ public class CliModelsHandler extends BaseMessageHandler {
                 // cold-starting — wait for it instead of spawning a duplicate
                 // node process, then forward the cached result (the leader's
                 // direct push may have landed before this surface registered
-                // its listener). Bounded by the leader's 50s process timeout.
-                flight.join();
+                // its listener). Bounded so a wedged leader fails this surface
+                // instead of hanging it past the webview's own timeout.
+                try {
+                    flight.get(TIMEOUT_SECONDS + 10L, TimeUnit.SECONDS);
+                } catch (java.util.concurrent.TimeoutException timeout) {
+                    pushError(provider, "list models timed out");
+                    return;
+                }
                 String refreshed = CliModelsCache.get(provider);
                 if (refreshed != null) {
                     LOG.debug("[CliModels] Forwarding catalog refreshed by a concurrent request for " + provider);
@@ -142,6 +162,12 @@ public class CliModelsHandler extends BaseMessageHandler {
                     // surface still needs its own outcome; retry once as a
                     // fresh leader.
                     listModels(provider, retryDepth + 1);
+                } else {
+                    // Retried once and still no cached outcome (e.g. landed as
+                    // a follower of another failed flight) — push a terminal
+                    // error so the dropdown stops spinning instead of waiting
+                    // for the webview's own timeout.
+                    pushError(provider, "list models failed");
                 }
             }
         } catch (Exception e) {

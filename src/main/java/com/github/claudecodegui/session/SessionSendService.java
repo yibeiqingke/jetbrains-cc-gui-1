@@ -548,8 +548,11 @@ public class SessionSendService {
         }
         // Leftovers after a provider switch without model reset. OpenCode
         // legitimately supports OpenAI models, so gpt-* is only filtered for
-        // the other CLI providers.
-        if (lower.startsWith("claude-") || (lower.startsWith("gpt-") && !"opencode".equals(provider))) {
+        // the other CLI providers. CodeBuddy is a multi-model gateway whose
+        // catalog serves both gpt-* and claude-* ids, so neither prefix can be
+        // treated as a leftover there.
+        if (!"codebuddy".equals(provider)
+                && (lower.startsWith("claude-") || (lower.startsWith("gpt-") && !"opencode".equals(provider)))) {
             LOG.warn("[" + provider + "] Ignoring non-provider model leftover for CLI: " + trimmed);
             return null;
         }

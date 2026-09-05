@@ -121,7 +121,12 @@ export async function listModels() {
     if (discoveryTimer) clearTimeout(discoveryTimer);
     if (sessionHandle && typeof sessionHandle.close === 'function') {
       try {
-        await sessionHandle.close();
+        // Bounded like the queryHandle.interrupt() below: a wedged close must
+        // not pin the bridge process past the caller's overall timeout.
+        await Promise.race([
+          sessionHandle.close(),
+          new Promise(resolve => setTimeout(resolve, 2_000)),
+        ]);
       } catch {
         // The session may already have closed after model discovery. Cleanup
         // must never turn a valid result into an unhandled rejection.
