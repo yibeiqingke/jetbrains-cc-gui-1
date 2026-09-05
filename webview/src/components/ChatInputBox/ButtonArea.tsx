@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ButtonAreaProps, CodexFastMode, ModelInfo, PermissionMode, ReasoningEffort } from './types';
 import { DEFAULT_CLAUDE_MODEL_ID } from './types';
-import { CodexFastModeSelect, ConfigSelect, DshPresetSelect, ModelSelect, ModeSelect, ProviderSelect, ReasoningSelect } from './selectors';
+import { ConfigSelect, ModeSelect, ModelConfigSelect, ProviderSelect } from './selectors';
 import { STORAGE_KEYS, validateCodexCustomModels } from '../../types/provider';
 import type { CodexCustomModel } from '../../types/provider';
 import { readClaudeModelMapping } from '../../utils/claudeModelMapping';
@@ -78,6 +78,7 @@ export const ButtonArea = ({
   selectedModel = DEFAULT_CLAUDE_MODEL_ID,
   permissionMode = 'default',
   currentProvider = 'claude',
+  codexNativeAutoReviewAvailable = true,
   reasoningEffort = 'high',
   dshPreset = '',
   codexFastMode = 'normal',
@@ -98,6 +99,7 @@ export const ButtonArea = ({
   onAgentSelect,
   onOpenAgentSettings,
   onAddModel,
+  onOpenCliSettings,
   longContextEnabled = true,
   onLongContextChange,
 }: ButtonAreaProps) => {
@@ -150,7 +152,6 @@ export const ButtonArea = ({
       provider: currentProvider,
       cliModels,
       cliCatalogHasEntries,
-      cliRoles: ompRoles,
       claudeCustomModels: getCustomClaudeModels(),
       codexCustomModels: getCustomCodexModels(),
       codeBuddyCustomModels: codeBuddyModels.models.map((model) => ({
@@ -165,11 +166,12 @@ export const ButtonArea = ({
     });
     // customModelsVersion intentionally forces re-read of localStorage customs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [codeBuddyModels.models, currentProvider, customModelsVersion, cliModels, cliCatalogHasEntries, ompRoles]);
+  }, [codeBuddyModels.models, currentProvider, customModelsVersion, cliModels, cliCatalogHasEntries]);
 
   // When a dynamic model catalog arrives, ensure selection is a real entry.
   useEffect(() => {
-    const isDynamicProvider = currentProvider === 'kimi' || currentProvider === 'opencode'
+    const isDynamicProvider = currentProvider === 'kimi' || currentProvider === 'minimax'
+      || currentProvider === 'opencode'
       || currentProvider === 'pi' || currentProvider === 'codex'
       || currentProvider === 'grok' || currentProvider === 'omp'
       || currentProvider === 'dsh' || currentProvider === 'codebuddy';
@@ -194,7 +196,13 @@ export const ButtonArea = ({
     }
     if (!cliCatalogHasEntries) return;
     if (cliModelsLoading) return;
-    const exists = availableModels.some((model) => model.id === selectedModel);
+    if (!availableModels.length || !onModelSelect) return;
+    // OMP roles are not in the model list (they live in ModeSelect), so an
+    // active role must count as a valid selection — otherwise picking
+    // 'smol' in the mode selector would be clobbered back to the default
+    // the moment a catalog arrives.
+    const exists = availableModels.some((model) => model.id === selectedModel)
+      || (currentProvider === 'omp' && ompRoles.some((role) => role.id === selectedModel));
     if (!exists) {
       onModelSelect(cliDefaultModel ?? availableModels[0].id);
     }
@@ -207,6 +215,7 @@ export const ButtonArea = ({
     cliCatalogHasEntries,
     cliModelsLoading,
     codeBuddyModels.models,
+    ompRoles,
   ]);
 
   /**
@@ -314,12 +323,18 @@ export const ButtonArea = ({
         <ProviderSelect
           value={currentProvider}
           onChange={handleProviderSelect}
+          onOpenCliSettings={onOpenCliSettings}
           compact
         />
-        <ModeSelect value={permissionMode} onChange={handleModeSelect} provider={currentProvider} />
-        <ModelSelect
-          value={selectedModel}
-          onChange={handleModelSelect}
+        <ModeSelect
+          value={permissionMode}
+          onChange={handleModeSelect}
+          provider={currentProvider}
+          codexNativeAutoReviewAvailable={codexNativeAutoReviewAvailable}
+        />
+        <ModelConfigSelect
+          selectedModel={selectedModel}
+          onModelSelect={handleModelSelect}
           models={availableModels}
           currentProvider={currentProvider}
           loading={cliModelsLoading}
@@ -328,20 +343,14 @@ export const ButtonArea = ({
           onAddModel={onAddModel}
           longContextEnabled={longContextEnabled}
           onLongContextChange={onLongContextChange}
+          reasoningEffort={reasoningEffort}
+          onReasoningChange={handleReasoningChange}
+          codexFastMode={codexFastMode}
+          onCodexFastModeChange={handleCodexFastModeChange}
+          dshPreset={dshPreset}
+          onDshPresetChange={handleDshPresetChange}
         />
-        <ReasoningSelect
-          value={reasoningEffort}
-          onChange={handleReasoningChange}
-          selectedModel={selectedModel}
-          currentProvider={currentProvider}
-          selectedModelInfo={availableModels.find((model) => model.id === selectedModel)}
-        />
-        {currentProvider === 'codex' && (
-          <CodexFastModeSelect value={codexFastMode} onChange={handleCodexFastModeChange} />
-        )}
-        {currentProvider === 'dsh' && (
-          <DshPresetSelect value={dshPreset} onChange={handleDshPresetChange} />
-        )}
+
       </div>
 
       {/* Right side: tool buttons */}

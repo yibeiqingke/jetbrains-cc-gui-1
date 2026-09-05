@@ -30,7 +30,7 @@ import {
 import { applyDiffTheme, getStoredDiffTheme } from './utils/diffTheme';
 import { collectTaskEventsFromMessages } from './utils/taskNotificationMessage';
 import type { ClaudeMessage } from './types';
-import type { Attachment, ChatInputBoxHandle } from './components/ChatInputBox/types';
+import type { Attachment, ChatInputBoxHandle, PermissionMode } from './components/ChatInputBox/types';
 import {
   apply1MContextSuffix,
   isValidPermissionMode,
@@ -98,6 +98,7 @@ const App = () => {
   const {
     currentView, setCurrentView,
     settingsInitialTab, setSettingsInitialTab,
+    settingsProviderSubTab, setSettingsProviderSubTab,
     toasts, addToast, dismissToast, clearToasts,
     setContextInfo,
     searchOpen, setSearchOpen,
@@ -159,6 +160,7 @@ const App = () => {
     currentProvider, selectedModel, permissionMode,
     selectedAgent, sdkStatusLoading, sdkStatusError, currentSdkInstalled,
     claudeSdkMeetsMinimum,
+    codexNativeAutoReviewAvailable,
     currentProviderRef,
     activeProviderConfig, claudeSettingsAlwaysThinkingEnabled,
     reasoningEffort, codexFastMode, dshPreset, streamingEnabledSetting, sendShortcut, autoOpenFileEnabled,
@@ -168,7 +170,7 @@ const App = () => {
     setClaudePermissionMode, setCodexPermissionMode,
     setCodeBuddyPermissionMode,
     setSelectedClaudeModel, setSelectedCodexModel,
-    setSelectedCodeBuddyModel,
+    setSelectedCodeBuddyModel, setSelectedMiniMaxModel,
     setSelectedGrokModel, setSelectedKimiModel,
     setSelectedOpenCodeModel, setSelectedPiModel, setSelectedDshModel,
     setSelectedOmpModel, setOmpPermissionMode,
@@ -336,6 +338,9 @@ const App = () => {
           sendBridgeEvent('set_model', model);
         } else if (provider === 'kimi') {
           setSelectedKimiModel(model);
+          sendBridgeEvent('set_model', model);
+        } else if (provider === 'minimax') {
+          setSelectedMiniMaxModel(model);
           sendBridgeEvent('set_model', model);
         } else if (provider === 'opencode') {
           setSelectedOpenCodeModel(model);
@@ -575,6 +580,7 @@ const App = () => {
         onHistory={() => setCurrentView('history')}
         onSettings={() => {
           setSettingsInitialTab(undefined);
+          setSettingsProviderSubTab(undefined);
           setCurrentView('settings');
         }}
         onOpenSearch={() => setSearchOpen(true)}
@@ -591,6 +597,7 @@ const App = () => {
         <SettingsView
           onClose={() => setCurrentView('chat')}
           initialTab={settingsInitialTab}
+          initialProviderSubTab={settingsProviderSubTab}
           currentProvider={currentProvider}
           streamingEnabled={streamingEnabledSetting}
           onStreamingEnabledChange={handleStreamingEnabledChange}
@@ -646,6 +653,7 @@ const App = () => {
               currentProvider={currentProvider}
               selectedModel={selectedModel}
               permissionMode={permissionMode}
+              codexNativeAutoReviewAvailable={codexNativeAutoReviewAvailable}
               selectedAgent={selectedAgent}
               sdkStatusLoading={sdkStatusLoading}
               sdkStatusError={sdkStatusError}
@@ -710,6 +718,7 @@ const App = () => {
         onRewindCancel={handleRewindCancel}
         currentProvider={currentProvider}
         permissionDialogTimeoutSeconds={permissionDialogTimeoutSeconds}
+        onPlanApprovalModeChange={(mode) => handleModeSelect(mode as PermissionMode)}
       />
     </>
   );

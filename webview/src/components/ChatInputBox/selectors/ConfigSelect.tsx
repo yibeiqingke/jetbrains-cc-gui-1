@@ -19,6 +19,12 @@ const DOCS_URLS: Record<string, string> = {
   'zh-TW': 'https://docs.mossx.ai/zh-Hant/jetbrains/index',
 };
 const DEFAULT_DOCS_URL = 'https://docs.mossx.ai/en/jetbrains/index';
+/**
+ * Runtime provider switching is only implemented for the Claude and Codex
+ * harnesses (see RuntimeProviderSelect's providerKind). Hide the menu entry
+ * for the beta CLI providers (grok/kimi/opencode/pi/omp/dsh).
+ */
+const RUNTIME_PROVIDER_SUPPORTED: Record<string, true> = { claude: true, codex: true };
 
 const resolveDocsUrl = (language: string): string => {
   if (language.startsWith('zh-TW') || language.startsWith('zh-Hant')) {
@@ -52,11 +58,7 @@ const TOGGLE_BUTTON_STYLE: React.CSSProperties = {
 };
 
 const SUBMENU_BASE_STYLE: React.CSSProperties = {
-  position: 'absolute',
-  left: '100%',
-  top: 0,
-  zIndex: 10001,
-  minWidth: '320px',
+  minWidth: 0,
   maxWidth: '360px',
   maxHeight: '300px',
   overflowY: 'auto',
@@ -180,11 +182,12 @@ export const ConfigSelect = ({
     buttonRef,
     dropdownRef,
   });
-  const { positionedStyle: agentSubmenuPositionedStyle, maxHeight: agentSubmenuMaxHeight, recalculate: agentSubmenuRecalculate } = useDropdownPosition({
+  const { positionedStyle: agentSubmenuPositionedStyle, maxHeight: agentSubmenuMaxHeight, maxWidth: agentSubmenuMaxWidth, recalculate: agentSubmenuRecalculate } = useDropdownPosition({
     buttonRef: agentTriggerRef,
     dropdownRef: agentSubmenuRef,
     submenu: true,
-    minWidth: 320,
+    minWidth: 260,
+    maxWidth: 360,
     submenuMaxHeight: 300,
     submenuBottomClearance: 96,
   });
@@ -335,6 +338,7 @@ export const ConfigSelect = ({
       className="selector-dropdown"
       style={{
         ...SUBMENU_BASE_STYLE,
+        maxWidth: agentSubmenuMaxWidth ?? 360,
         ...agentSubmenuPositionedStyle,
         maxHeight: submenuMaxHeightPx,
       }}
@@ -441,38 +445,42 @@ export const ConfigSelect = ({
             {activeSubmenu === 'agent' && renderAgentSubmenu()}
           </div>
 
-          <div className="selector-divider" />
+          {/* Runtime Provider Item — only Claude/Codex support switching */}
+          {RUNTIME_PROVIDER_SUPPORTED[currentProvider] && (
+            <>
+              <div className="selector-divider" />
 
-          {/* Runtime Provider Item */}
-          <div
-            ref={runtimeProviderTriggerRef}
-            className="selector-option"
-            data-testid="config-option-runtime-provider"
-            onMouseEnter={() => setActiveSubmenu('runtimeProvider')}
-            onMouseLeave={() => setActiveSubmenu('none')}
-            style={SELECTOR_OPTION_RELATIVE_STYLE}
-          >
-            <span className="codicon codicon-vm-connect" />
-            <div style={ITEM_INFO_STYLE}>
-              <span>{t('config.runtimeProvider.title')}</span>
-            </div>
-            <div style={ARROW_CONTAINER_STYLE}>
-              <span className="codicon codicon-chevron-right" style={ARROW_ICON_STYLE} />
-            </div>
+              <div
+                ref={runtimeProviderTriggerRef}
+                className="selector-option"
+                data-testid="config-option-runtime-provider"
+                onMouseEnter={() => setActiveSubmenu('runtimeProvider')}
+                onMouseLeave={() => setActiveSubmenu('none')}
+                style={SELECTOR_OPTION_RELATIVE_STYLE}
+              >
+                <span className="codicon codicon-vm-connect" />
+                <div style={ITEM_INFO_STYLE}>
+                  <span>{t('config.runtimeProvider.title')}</span>
+                </div>
+                <div style={ARROW_CONTAINER_STYLE}>
+                  <span className="codicon codicon-chevron-right" style={ARROW_ICON_STYLE} />
+                </div>
 
-            {activeSubmenu === 'runtimeProvider' && (
-              <RuntimeProviderSelect
-                currentProvider={currentProvider}
-                embedded
-                triggerRef={runtimeProviderTriggerRef}
-                onProviderSwitched={showProviderToast}
-                onClose={() => {
-                  setIsOpen(false);
-                  setActiveSubmenu('none');
-                }}
-              />
-            )}
-          </div>
+                {activeSubmenu === 'runtimeProvider' && (
+                  <RuntimeProviderSelect
+                    currentProvider={currentProvider}
+                    embedded
+                    triggerRef={runtimeProviderTriggerRef}
+                    onProviderSwitched={showProviderToast}
+                    onClose={() => {
+                      setIsOpen(false);
+                      setActiveSubmenu('none');
+                    }}
+                  />
+                )}
+              </div>
+            </>
+          )}
 
           <div className="selector-divider" />
 

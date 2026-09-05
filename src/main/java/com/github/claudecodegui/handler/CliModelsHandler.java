@@ -45,7 +45,7 @@ public class CliModelsHandler extends BaseMessageHandler {
     };
 
     private static final Set<String> SUPPORTED_PROVIDERS = Set.of(
-            "opencode", "kimi", "pi", "omp", "codex", "grok", "dsh", "codebuddy"
+            "opencode", "kimi", "pi", "omp", "codex", "grok", "dsh", "codebuddy", "minimax"
     );
 
     private final Gson gson = new Gson();

@@ -16,11 +16,13 @@ import styles from './style.module.less';
 const ICON_14_STYLE: React.CSSProperties = { fontSize: 14 };
 const FLEX_1_STYLE: React.CSSProperties = { flex: 1 };
 
-type ProviderManageTab = 'claude' | 'codex' | 'codebuddy' | 'cli';
+export type ProviderManageTab = 'claude' | 'codex' | 'codebuddy' | 'cli';
 type ModelDialogTarget = 'claude' | 'codex' | 'codebuddy';
 
 interface ProviderTabSectionProps {
   currentProvider: 'claude' | 'codex' | string;
+  /** Deep-linked sub-tab (e.g. from the provider dropdown's CLI entry); wins over currentProvider inference */
+  initialSubTab?: ProviderManageTab;
   // Claude provider props
   providers: ProviderConfig[];
   loading: boolean;
@@ -42,6 +44,7 @@ interface ProviderTabSectionProps {
 
 const ProviderTabSection = ({
   currentProvider,
+  initialSubTab,
   providers,
   loading,
   onAddProvider,
@@ -60,10 +63,12 @@ const ProviderTabSection = ({
   const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState<ProviderManageTab>(() => {
+    if (initialSubTab) return initialSubTab;
     if (currentProvider === 'codex') return 'codex';
     if (currentProvider === 'codebuddy') return 'codebuddy';
-    // Grok / Kimi / OpenCode / PI / OMP / DSH share the CLI management surface.
+    // Grok / Kimi / MiniMax / OpenCode / PI / OMP / DSH share the CLI management surface.
     if (currentProvider === 'grok' || currentProvider === 'kimi'
+      || currentProvider === 'minimax'
       || currentProvider === 'opencode' || currentProvider === 'pi'
       || currentProvider === 'omp' || currentProvider === 'dsh') {
       return 'cli';

@@ -50,13 +50,19 @@ interface ModeSelectProps {
   value: PermissionMode;
   onChange: (mode: PermissionMode) => void;
   provider?: string;
+  codexNativeAutoReviewAvailable?: boolean;
 }
 
 /**
  * ModeSelect - Mode selector component
- * Supports switching between default, agent, plan, and auto modes
+ * Supports switching between manual, agent, provider-native auto, plan, and Full Auto modes
  */
-export const ModeSelect = ({ value, onChange, provider }: ModeSelectProps) => {
+export const ModeSelect = ({
+  value,
+  onChange,
+  provider,
+  codexNativeAutoReviewAvailable = true,
+}: ModeSelectProps) => {
   const { t, i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -78,21 +84,32 @@ export const ModeSelect = ({ value, onChange, provider }: ModeSelectProps) => {
       const roleModes = ompRoles.map(roleToModeInfo);
       return defaultMode ? [defaultMode, ...roleModes] : roleModes;
     }
-    if (provider === 'codex' || provider === 'grok' || provider === 'kimi' || provider === 'opencode' || provider === 'pi' || provider === 'omp' || provider === 'dsh' || provider === 'codebuddy') {
-      // Codex + headless CLI: plan/smol/slow modes are not exposed (always-approve / auto).
-      return AVAILABLE_MODES.filter((mode) => mode.id !== 'plan' && mode.id !== 'smol' && mode.id !== 'slow');
+    if (provider === 'codex') {
+      return AVAILABLE_MODES.filter((mode) =>
+        (mode.id !== 'auto' || codexNativeAutoReviewAvailable)
+        && mode.id !== 'plan'
+        && mode.id !== 'smol'
+        && mode.id !== 'slow'
+      );
+    }
+    if (provider === 'grok' || provider === 'kimi' || provider === 'minimax' || provider === 'opencode' || provider === 'pi' || provider === 'dsh' || provider === 'codebuddy') {
+      // Headless CLI providers do not expose Claude/Codex native automatic reviewers.
+      return AVAILABLE_MODES.filter((mode) => mode.id !== 'auto' && mode.id !== 'plan' && mode.id !== 'smol' && mode.id !== 'slow');
     }
     // smol/slow are OMP-only model roles; hide them everywhere else.
     return AVAILABLE_MODES.filter((mode) => mode.id !== 'smol' && mode.id !== 'slow');
-  }, [provider, ompRoles]);
+  }, [provider, ompRoles, codexNativeAutoReviewAvailable]);
 
   const currentMode = modeOptions.find(m => m.id === value) || modeOptions[0];
 
   // Helper function to get translated mode text
-  const getModeText = (modeId: PermissionMode, field: 'label' | 'tooltip' | 'description') => {
+  const getModeText = (modeId: PermissionMode, field: 'label' | 'shortLabel' | 'tooltip' | 'description') => {
     if (provider === 'codex') {
       const codexKey = `codexModes.${modeId}.${field}`;
       const fallbackKey = `modes.${modeId}.${field}`;
+      if (field === 'shortLabel') {
+        return t(codexKey, { defaultValue: t(fallbackKey, { defaultValue: t(`codexModes.${modeId}.label`) }) });
+      }
       return t(codexKey, { defaultValue: t(fallbackKey) });
     }
     if (provider === 'omp') {
@@ -100,10 +117,12 @@ export const ModeSelect = ({ value, onChange, provider }: ModeSelectProps) => {
       if (i18n.exists(ompKey)) return t(ompKey);
       const fallbackKey = `modes.${modeId}.${field}`;
       if (i18n.exists(fallbackKey)) return t(fallbackKey);
+      if (field === 'shortLabel' && i18n.exists(`ompModes.${modeId}.label`)) return t(`ompModes.${modeId}.label`);
+      if (field === 'shortLabel' && i18n.exists(`modes.${modeId}.label`)) return t(`modes.${modeId}.label`);
       // Dynamic role with no i18n entry: show the raw ModeInfo strings
       // (capitalized role id / resolved model selector).
       const info = modeOptions.find((mode) => mode.id === modeId);
-      if (field === 'label') return info?.label ?? modeId;
+      if (field === 'label' || field === 'shortLabel') return info?.label ?? modeId;
       return info?.[field] ?? info?.description ?? '';
     }
     if (provider === 'codebuddy' && modeId === 'bypassPermissions') {
@@ -112,6 +131,9 @@ export const ModeSelect = ({ value, onChange, provider }: ModeSelectProps) => {
       return t(codeBuddyKey, { defaultValue: t(fallbackKey) });
     }
 
+    if (field === 'shortLabel') {
+      return t(`modes.${modeId}.shortLabel`, { defaultValue: t(`modes.${modeId}.label`) });
+    }
     return t(`modes.${modeId}.${field}`);
   };
 
@@ -174,12 +196,12 @@ export const ModeSelect = ({ value, onChange, provider }: ModeSelectProps) => {
     <div style={RELATIVE_INLINE_BLOCK_STYLE}>
       <button
         ref={buttonRef}
-        className={`selector-button${value === 'bypassPermissions' ? ' mode-auto-active' : ''}`}
+        className={`selector-button${value === 'bypassPermissions' ? ' mode-full-auto-active' : ''}`}
         onClick={handleToggle}
         title={getModeText(currentMode.id, 'tooltip') || `${t('chat.currentMode', { mode: getModeText(currentMode.id, 'label') })}`}
       >
         <span className={`codicon ${currentMode.icon}`} />
-        <span className="selector-button-text">{getModeText(currentMode.id, 'label')}</span>
+        <span className="selector-button-text">{getModeText(currentMode.id, 'shortLabel')}</span>
         <span className={`codicon codicon-chevron-${isOpen ? 'up' : 'down'}`} style={CHEVRON_ICON_STYLE} />
       </button>
 
