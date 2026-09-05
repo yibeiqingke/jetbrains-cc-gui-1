@@ -170,6 +170,30 @@ export function computeAssistantSnapshotDelta(snapshot, previousSnapshot, emitte
   return snapshot;
 }
 
+/**
+ * Extract a human-readable error from an SDK result message, or null when the
+ * result is a success. The Agent SDK reports failures such as
+ * error_max_turns / error_during_execution as result messages (is_error or a
+ * non-success subtype) instead of throwing — treating them as success would
+ * leave the user with an empty reply and no error.
+ */
+export function getResultError(msg) {
+  if (!msg || msg.type !== 'result') return null;
+  const subtype = typeof msg.subtype === 'string' ? msg.subtype : '';
+  const isError = msg.is_error === true || (subtype && subtype !== 'success' && subtype !== 'usage');
+  if (!isError) return null;
+  if (Array.isArray(msg.errors)) {
+    const joined = msg.errors.filter(e => typeof e === 'string' && e.trim()).join('; ');
+    if (joined) return joined;
+  }
+  if (typeof msg.error === 'string' && msg.error.trim()) return msg.error;
+  if (msg.error && typeof msg.error.message === 'string' && msg.error.message.trim()) {
+    return msg.error.message;
+  }
+  if (typeof msg.result === 'string' && msg.result.trim()) return msg.result;
+  return subtype ? `CodeBuddy run failed (${subtype})` : 'CodeBuddy run failed';
+}
+
 export async function sendMessage(
   message,
   sessionId = '',
@@ -215,6 +239,7 @@ export async function sendMessage(
     process.stdout.write('[MESSAGE_START]\n[STREAM_START]\n');
     streamStarted = true;
     let currentSessionId = sessionId || '';
+    let runError = null;
     let assistantText = '';
     let currentTurnText = '';
     let lastAssistantSnapshot = '';
@@ -281,12 +306,24 @@ export async function sendMessage(
         assistantSnapshots.clear();
         const usage = msg.usage || msg.modelUsage;
         if (usage) process.stdout.write(`[USAGE] ${JSON.stringify(usage)}\n`);
+        // The final result wins: a later successful turn clears an earlier
+        // turn's error (and vice versa).
+        runError = getResultError(msg);
       }
     }
 
-    if (!assistantText) log('completed without a text response; tool messages were preserved');
+    if (!assistantText && !runError) log('completed without a text response; tool messages were preserved');
     if (streamStarted) process.stdout.write('[STREAM_END]\n');
     process.stdout.write('[MESSAGE_END]\n');
+    if (runError) {
+      // Mirror the catch-path wire shape so Java surfaces the failure instead
+      // of a silent empty success.
+      const payload = { success: false, error: runError, sessionId: currentSessionId };
+      console.error('[SEND_ERROR]', JSON.stringify(payload));
+      process.stdout.write(`[SEND_ERROR] ${JSON.stringify(payload)}\n`);
+      process.stdout.write(`${JSON.stringify(payload)}\n`);
+      return;
+    }
     process.stdout.write(`${JSON.stringify({ success: true, sessionId: currentSessionId })}\n`);
   } catch (error) {
     if (streamStarted) process.stdout.write('[STREAM_END]\n');

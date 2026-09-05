@@ -82,6 +82,8 @@ interface ModelConfigSelectProps {
   onAuthorize?: () => void;
   onRetry?: () => void;
   onAddModel?: () => void;
+  /** Catalog entry for the selected model — drives per-model effort filtering. */
+  selectedModelInfo?: ModelInfo;
   longContextEnabled?: boolean;
   onLongContextChange?: (enabled: boolean) => void;
   reasoningEffort?: ReasoningEffort;
@@ -117,6 +119,7 @@ export const ModelConfigSelect = ({
   onAuthorize,
   onRetry,
   onAddModel,
+  selectedModelInfo,
   longContextEnabled = true,
   onLongContextChange,
   reasoningEffort = 'high',
@@ -203,6 +206,7 @@ export const ModelConfigSelect = ({
     handleReasoningChange,
     selectedModel,
     currentProvider,
+    selectedModelInfo,
   );
 
   const strippedValue = strip1MContextSuffix(selectedModel);
@@ -471,6 +475,7 @@ export const ModelConfigSelect = ({
                   onChange={handleReasoningChange}
                   selectedModel={selectedModel}
                   currentProvider={currentProvider}
+                  selectedModelInfo={selectedModelInfo}
                   embedded
                   triggerRef={effortTriggerRef}
                   onClose={closeMenu}

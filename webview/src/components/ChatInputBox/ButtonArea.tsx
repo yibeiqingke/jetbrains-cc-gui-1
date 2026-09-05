@@ -169,6 +169,13 @@ export const ButtonArea = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeBuddyModels.models, currentProvider, customModelsVersion, cliModels, cliCatalogHasEntries]);
 
+  // Catalog entry for the current selection — CodeBuddy's per-model effort
+  // filtering (supportedEfforts / reasoningSupported) reads this.
+  const selectedModelInfo = useMemo(
+    () => availableModels.find((model) => model.id === selectedModel),
+    [availableModels, selectedModel],
+  );
+
   // When a dynamic model catalog arrives, ensure selection is a real entry.
   useEffect(() => {
     const isDynamicProvider = currentProvider === 'kimi' || currentProvider === 'minimax'
@@ -344,6 +351,7 @@ export const ButtonArea = ({
           onAuthorize={onOpenCodeBuddySettings}
           onRetry={() => refreshCliModels(currentProvider)}
           onAddModel={onAddModel}
+          selectedModelInfo={selectedModelInfo}
           longContextEnabled={longContextEnabled}
           onLongContextChange={onLongContextChange}
           reasoningEffort={reasoningEffort}

@@ -389,7 +389,12 @@ export function useModelProviderState({ addToast, t }: UseModelProviderStateOpti
     else if (providerId === 'omp') newModel = selectedOmpModel;
     else if (providerId === 'dsh') newModel = selectedDshModel;
     else if (providerId === 'codebuddy') newModel = selectedCodeBuddyModel;
-    sendBridgeEvent('set_model', newModel);
+    // CodeBuddy's default model id is '' — pushing it would clobber the
+    // Java-side session model and clear usage stats (same guard as the
+    // restore path in useModelStatePersistence).
+    if (newModel) {
+      sendBridgeEvent('set_model', newModel);
+    }
   }, [
     claudePermissionMode,
     codexPermissionMode,

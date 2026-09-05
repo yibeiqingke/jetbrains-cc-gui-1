@@ -4,8 +4,36 @@ import {
   buildQueryOptions,
   buildPromptWithAttachments,
   computeAssistantSnapshotDelta,
+  getResultError,
   normalizeReasoningEffort,
 } from './message-service.js';
+
+test('getResultError returns null for success and non-result messages', () => {
+  assert.equal(getResultError(null), null);
+  assert.equal(getResultError({ type: 'assistant' }), null);
+  assert.equal(getResultError({ type: 'result', subtype: 'success', is_error: false }), null);
+  assert.equal(getResultError({ type: 'result', subtype: 'usage' }), null);
+  assert.equal(getResultError({ type: 'result' }), null);
+});
+
+test('getResultError surfaces error results instead of swallowing them', () => {
+  assert.equal(
+    getResultError({ type: 'result', is_error: true, errors: ['token expired', 'retry failed'] }),
+    'token expired; retry failed',
+  );
+  assert.equal(
+    getResultError({ type: 'result', subtype: 'error_during_execution', error: 'boom' }),
+    'boom',
+  );
+  assert.equal(
+    getResultError({ type: 'result', subtype: 'error_max_turns', result: 'stopped after 1000 turns' }),
+    'stopped after 1000 turns',
+  );
+  assert.equal(
+    getResultError({ type: 'result', is_error: true }),
+    'CodeBuddy run failed',
+  );
+});
 
 test('normalizes CodeBuddy reasoning effort and preserves max', () => {
   assert.equal(normalizeReasoningEffort(' MAX '), 'max');
