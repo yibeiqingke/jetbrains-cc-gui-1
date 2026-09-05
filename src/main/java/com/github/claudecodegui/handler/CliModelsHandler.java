@@ -83,6 +83,14 @@ public class CliModelsHandler extends BaseMessageHandler {
                         "CODEBUDDY_LOCAL_CONFIG_REQUIRED");
                 return;
             }
+            // A fresh cached catalog saves the 2-5s node + SDK cold start on
+            // repeat requests; the authorization check above still runs first.
+            String cachedPayload = CliModelsCache.get(provider);
+            if (cachedPayload != null) {
+                LOG.info("[CliModels] Serving cached catalog for " + provider);
+                callJavaScript("window.setCliModels", escapeJs(cachedPayload));
+                return;
+            }
             String node = nodeDetector.findNodeExecutable();
             BridgeDirectoryResolver resolver = BridgePreloader.getSharedResolver();
             File bridgeDir = resolver != null ? resolver.findSdkDir() : null;
@@ -157,7 +165,14 @@ public class CliModelsHandler extends BaseMessageHandler {
             if (!payload.has("provider") || payload.get("provider").isJsonNull()) {
                 payload.addProperty("provider", provider);
             }
-            callJavaScript("window.setCliModels", escapeJs(gson.toJson(payload)));
+            String payloadJson = gson.toJson(payload);
+            if (payload.has("success") && payload.get("success").isJsonPrimitive()
+                    && payload.get("success").getAsBoolean()) {
+                // Only success payloads are cached — error pushes must always
+                // reflect the next real attempt.
+                CliModelsCache.put(provider, payloadJson);
+            }
+            callJavaScript("window.setCliModels", escapeJs(payloadJson));
         } catch (Exception e) {
             LOG.warn("[CliModels] Failed for " + provider + ": " + e.getMessage(), e);
             pushError(provider, e.getMessage() != null ? e.getMessage() : "list models failed");

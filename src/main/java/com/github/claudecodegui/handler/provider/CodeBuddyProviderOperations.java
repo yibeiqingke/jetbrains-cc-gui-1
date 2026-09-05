@@ -1,5 +1,6 @@
 package com.github.claudecodegui.handler.provider;
 
+import com.github.claudecodegui.handler.CliModelsCache;
 import com.github.claudecodegui.bridge.BridgeDirectoryResolver;
 import com.github.claudecodegui.bridge.EnvironmentConfigurator;
 import com.github.claudecodegui.bridge.NodeDetector;
@@ -88,6 +89,7 @@ public class CodeBuddyProviderOperations {
         AppExecutorUtil.getAppExecutorService().execute(() -> {
             try {
                 context.getSettingsService().setCodeBuddyLocalConfigAuthorized(false);
+                CliModelsCache.invalidate("codebuddy");
                 JsonObject status = buildStatus(false);
                 status.addProperty("authorized", false);
                 cacheStatus(status);
@@ -134,6 +136,9 @@ public class CodeBuddyProviderOperations {
                             ? new JsonObject()
                             : GSON.fromJson(content, JsonObject.class);
                     applyModelsConfigChanges(request);
+                    // The post-save refetch must see the edited models.json,
+                    // not the TTL-cached get_cli_models catalog.
+                    CliModelsCache.invalidate("codebuddy");
                     payload = readEffectiveModelsConfig();
                     payload.addProperty("saved", true);
                 }
