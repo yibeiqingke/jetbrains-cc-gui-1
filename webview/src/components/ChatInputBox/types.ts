@@ -907,6 +907,8 @@ export interface ChatInputBoxProps {
   onOpenModelSettings?: () => void;
   /** Open CLI management settings (Settings → Providers → CLI) */
   onOpenCliSettings?: () => void;
+  /** Open CodeBuddy local-config authorization (Settings → Providers → CodeBuddy) */
+  onOpenCodeBuddySettings?: () => void;
 
   /** Whether has messages (for rewind button display) */
   hasMessages?: boolean;
@@ -1007,6 +1009,8 @@ export interface ButtonAreaProps {
   onAddModel?: () => void;
   /** Open CLI management settings (Settings → Providers → CLI) */
   onOpenCliSettings?: () => void;
+  /** Open CodeBuddy local-config authorization (Settings → Providers → CodeBuddy) */
+  onOpenCodeBuddySettings?: () => void;
   /** Whether long context (1M) is enabled */
   longContextEnabled?: boolean;
   /** Toggle long context callback */

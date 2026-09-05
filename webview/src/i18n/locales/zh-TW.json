@@ -1641,7 +1641,8 @@
         "label": "GPT-5.4",
         "description": "最新前沿模型，能力進一步增強"
       }
-    }
+    },
+    "codebuddyAuthorize": "授權 CodeBuddy"
   },
   "modelConfig": {
     "title": "模型設定",

@@ -29,6 +29,8 @@ const CLI_MODELS_TIMEOUT_MS = 15_000;
 const modelsCache: CliModelsByProvider = {};
 const defaultModelCache: Record<string, string> = {};
 const catalogHasEntriesCache: Record<string, boolean> = {};
+/** Last error *code* per provider (e.g. CODEBUDDY_LOCAL_CONFIG_REQUIRED) for actionable error UI. */
+const errorCodeCache: Record<string, string> = {};
 
 /**
  * Dynamic model roles from the listModels payload (`roles: [{id,label,description}]`,
@@ -60,6 +62,7 @@ export function invalidateCliModelsCache(providerId: string) {
   delete modelsCache[providerId];
   delete defaultModelCache[providerId];
   delete catalogHasEntriesCache[providerId];
+  delete errorCodeCache[providerId];
 }
 
 /** Test-only: clear module caches between cases. */
@@ -67,6 +70,7 @@ export function __resetCliModelsCacheForTests() {
   for (const key of Object.keys(modelsCache)) delete modelsCache[key];
   for (const key of Object.keys(defaultModelCache)) delete defaultModelCache[key];
   for (const key of Object.keys(catalogHasEntriesCache)) delete catalogHasEntriesCache[key];
+  for (const key of Object.keys(errorCodeCache)) delete errorCodeCache[key];
   for (const key of Object.keys(rolesCache)) delete rolesCache[key];
 }
 
@@ -144,6 +148,9 @@ export function useCliModels(currentProvider: string) {
   const [catalogHasEntriesByProvider, setCatalogHasEntriesByProvider] = useState<Record<string, boolean>>(
     () => ({ ...catalogHasEntriesCache }),
   );
+  const [errorCodeByProvider, setErrorCodeByProvider] = useState<Record<string, string>>(
+    () => ({ ...errorCodeCache }),
+  );
   const [loadingProvider, setLoadingProvider] = useState<string | null>(null);
   const [errorByProvider, setErrorByProvider] = useState<Record<string, string>>({});
   const pendingLoadRef = useRef<{ provider: string; timer: ReturnType<typeof setTimeout> } | null>(null);
@@ -178,8 +185,8 @@ export function useCliModels(currentProvider: string) {
   }, [clearPendingLoad]);
 
   useEffect(() => {
-    const handler = (dataOrStr: string | { provider?: string; models?: unknown; roles?: unknown; success?: boolean; error?: string; defaultModel?: unknown }) => {
-      let payload: { provider?: string; models?: unknown; roles?: unknown; success?: boolean; error?: string; defaultModel?: unknown } | null = null;
+    const handler = (dataOrStr: string | { provider?: string; models?: unknown; roles?: unknown; success?: boolean; error?: string; errorCode?: unknown; defaultModel?: unknown }) => {
+      let payload: { provider?: string; models?: unknown; roles?: unknown; success?: boolean; error?: string; errorCode?: unknown; defaultModel?: unknown } | null = null;
       if (typeof dataOrStr === 'string') {
         try {
           payload = JSON.parse(dataOrStr);
@@ -195,6 +202,11 @@ export function useCliModels(currentProvider: string) {
       const resolvedModels = models.length > 0 ? models : fallbackModels(provider);
       modelsCache[provider] = resolvedModels;
       catalogHasEntriesCache[provider] = models.length > 0;
+      if (typeof payload.errorCode === 'string' && payload.errorCode.trim()) {
+        errorCodeCache[provider] = payload.errorCode.trim();
+      } else {
+        delete errorCodeCache[provider];
+      }
       // Dynamic model roles (omp listModels ≥ roles support). Missing/invalid
       // roles → [] so consumers keep their static fallback.
       rolesCache[provider] = normalizeModels(payload.roles);
@@ -204,6 +216,16 @@ export function useCliModels(currentProvider: string) {
         [provider]: resolvedModels,
       }));
       setCatalogHasEntriesByProvider((prev) => ({ ...prev, [provider]: models.length > 0 }));
+      setErrorCodeByProvider((prev) => {
+        const code = typeof payload.errorCode === 'string' && payload.errorCode.trim()
+          ? payload.errorCode.trim()
+          : undefined;
+        if (code) return { ...prev, [provider]: code };
+        if (!(provider in prev)) return prev;
+        const next = { ...prev };
+        delete next[provider];
+        return next;
+      });
       const defaultModel = typeof payload.defaultModel === 'string' && payload.defaultModel.trim()
         ? payload.defaultModel.trim()
         : null;
@@ -266,6 +288,7 @@ export function useCliModels(currentProvider: string) {
       delete modelsCache.codex;
       delete defaultModelCache.codex;
       delete catalogHasEntriesCache.codex;
+      delete errorCodeCache.codex;
       setModelsByProvider((prev) => {
         if (!('codex' in prev)) return prev;
         const next = { ...prev };
@@ -335,6 +358,7 @@ export function useCliModels(currentProvider: string) {
     cliModels,
     cliModelsLoading: loadingProvider === currentProvider,
     cliModelsError: errorByProvider[currentProvider] ?? null,
+    cliModelsErrorCode: errorCodeByProvider[currentProvider] ?? null,
     cliDefaultModel: defaultModelByProvider[currentProvider] ?? null,
     cliCatalogHasEntries: catalogHasEntriesByProvider[currentProvider] ?? false,
     refreshCliModels,

@@ -52,6 +52,10 @@ interface ModelSelectProps {
   error?: string | null;
   /** Retries the CLI model catalog fetch for the current provider. */
   onRetry?: () => void;
+  /** Machine-readable error code from the bridge (e.g. CODEBUDDY_LOCAL_CONFIG_REQUIRED). */
+  errorCode?: string | null;
+  /** Present when the error is actionable in-app — e.g. open the authorize page. */
+  onAuthorize?: () => void;
   onAddModel?: () => void;
   longContextEnabled?: boolean;
   onLongContextChange?: (enabled: boolean) => void;
@@ -84,6 +88,8 @@ export const ModelSelect = ({
   loading = false,
   error = null,
   onRetry,
+  errorCode,
+  onAuthorize,
   onAddModel,
   longContextEnabled = true,
   onLongContextChange,
@@ -295,7 +301,21 @@ export const ModelSelect = ({
                 <span>{t('chat.loadingDropdown')}</span>
               </div>
             )}
-            {!loading && error && (
+            {!loading && error && errorCode === 'CODEBUDDY_LOCAL_CONFIG_REQUIRED' && onAuthorize && (
+              <div
+                className="selector-option selector-option-status"
+                data-testid="model-load-authorize"
+                style={{ ...LOADING_OPTION_STYLE, cursor: 'pointer' }}
+                title={error}
+                onClick={() => onAuthorize()}
+              >
+                <span className="codicon codicon-warning" />
+                <span style={{ flex: 1, minWidth: 0 }}>{error}</span>
+                <span style={{ color: 'var(--accent-primary)' }}>{t('models.codebuddyAuthorize', { defaultValue: 'Authorize' })}</span>
+                <span className="codicon codicon-arrow-right" />
+              </div>
+            )}
+            {!loading && error && !(errorCode === 'CODEBUDDY_LOCAL_CONFIG_REQUIRED' && onAuthorize) && (
               <div
                 className="selector-option selector-option-status"
                 data-testid="model-load-error"

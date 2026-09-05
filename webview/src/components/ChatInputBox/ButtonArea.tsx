@@ -100,12 +100,13 @@ export const ButtonArea = ({
   onOpenAgentSettings,
   onAddModel,
   onOpenCliSettings,
+  onOpenCodeBuddySettings,
   longContextEnabled = true,
   onLongContextChange,
 }: ButtonAreaProps) => {
   const { t } = useTranslation();
   // const fileInputRef = useRef<HTMLInputElement>(null);
-  const { cliModels, cliModelsLoading, cliModelsError, cliDefaultModel, cliCatalogHasEntries, refreshCliModels } = useCliModels(currentProvider);
+  const { cliModels, cliModelsLoading, cliModelsError, cliModelsErrorCode, cliDefaultModel, cliCatalogHasEntries, refreshCliModels } = useCliModels(currentProvider);
   const codeBuddyModels = useCodeBuddyModelsConfig(currentProvider === 'codebuddy');
   // Dynamic omp roles (static smol/slow/plan fallback until loaded).
   const ompRoles = useOmpRoles();
@@ -339,6 +340,8 @@ export const ButtonArea = ({
           currentProvider={currentProvider}
           loading={cliModelsLoading}
           error={cliModelsError}
+          errorCode={cliModelsErrorCode}
+          onAuthorize={onOpenCodeBuddySettings}
           onRetry={() => refreshCliModels(currentProvider)}
           onAddModel={onAddModel}
           longContextEnabled={longContextEnabled}

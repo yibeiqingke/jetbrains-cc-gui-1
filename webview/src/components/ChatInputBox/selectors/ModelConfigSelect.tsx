@@ -76,6 +76,10 @@ interface ModelConfigSelectProps {
   currentProvider?: string;
   loading?: boolean;
   error?: string | null;
+  /** Machine-readable error code from the bridge (e.g. CODEBUDDY_LOCAL_CONFIG_REQUIRED). */
+  errorCode?: string | null;
+  /** Actionable fix for the error — e.g. open the CodeBuddy authorize page. */
+  onAuthorize?: () => void;
   onRetry?: () => void;
   onAddModel?: () => void;
   longContextEnabled?: boolean;
@@ -109,6 +113,8 @@ export const ModelConfigSelect = ({
   currentProvider = 'claude',
   loading = false,
   error = null,
+  errorCode,
+  onAuthorize,
   onRetry,
   onAddModel,
   longContextEnabled = true,
@@ -342,6 +348,8 @@ export const ModelConfigSelect = ({
               currentProvider={currentProvider}
               loading={loading}
               error={error}
+              errorCode={errorCode}
+              onAuthorize={onAuthorize}
               onRetry={onRetry}
               onAddModel={onAddModel}
               longContextEnabled={longContextEnabled}
