@@ -70,7 +70,6 @@ export function useThemeInit() {
     applyUiThemeStyle(savedUiThemeStyle);
     if (savedUiThemeStyle === 'custom') {
       applyCustomUiTheme(loadCustomUiTheme());
-      applyChatBarThemeColor('');
     } else {
       // Initialize chat background color (validate hex format before applying)
       const savedChatBgColor = localStorage.getItem('chatBgColor');

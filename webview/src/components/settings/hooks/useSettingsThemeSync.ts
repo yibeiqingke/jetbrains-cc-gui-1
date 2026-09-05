@@ -117,8 +117,9 @@ export function useSettingsThemeSync(): UseSettingsThemeSyncReturn {
   useEffect(() => {
     applyUiThemeStyle(uiThemeStyle);
     if (uiThemeStyle === 'custom') {
+      // applyCustomUiTheme already overwrites all six --color-chat-bars-* vars,
+      // so no chat bar color clear is needed here.
       applyCustomUiTheme(customUiTheme);
-      applyChatBarThemeColor('');
     } else {
       if (previousUiThemeStyle.current === 'custom') {
         clearCustomUiThemeProperties();

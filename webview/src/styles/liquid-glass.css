@@ -153,4 +153,3 @@
 ) {
   border-radius: calc(6px * var(--custom-radius-scale, 1));
 }
-
