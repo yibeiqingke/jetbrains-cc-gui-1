@@ -57,7 +57,7 @@ describe('customUiTheme', () => {
   });
 
   it('exports and imports theme via JSON correctly', () => {
-    const preset = CUSTOM_THEME_PRESETS[1].theme; // Deep Ocean
+    const preset = CUSTOM_THEME_PRESETS[1].theme; // Frosted Glass
     const json = exportCustomUiTheme(preset);
     const imported = importCustomUiTheme(json);
 
