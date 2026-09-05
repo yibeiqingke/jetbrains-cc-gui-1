@@ -270,7 +270,9 @@
           "grok": "Grok CLI",
           "kimi": "Kimi CLI",
           "opencode": "OpenCode",
-          "pi": "PI CLI"
+          "pi": "PI CLI",
+          "omp": "OMP CLI",
+          "minimax": "MiniMax Code"
         },
         "currentProviderAuto": "目前使用自動選擇：{{provider}}",
         "currentProviderManual": "目前使用手動選擇的 provider：{{provider}}",
@@ -354,30 +356,28 @@
         "invalidColor": "請輸入有效的色彩值"
       },
       "soundNotification": {
-          "label": "自訂主題",
-          "bgPrimary": "主背景",
-          "bgSecondary": "次級背景",
-          "bgTertiary": "三級背景",
-          "bgElevated": "浮層背景",
-          "bgHover": "懸停背景",
-          "textPrimary": "主文字",
-          "textSecondary": "次級文字",
-          "borderPrimary": "主邊框",
-          "borderSecondary": "次級邊框",
-          "accentPrimary": "強調色",
-          "accentHover": "強調懸停",
-          "userBubble": "使用者氣泡",
-          "userText": "氣泡文字",
-          "radius": "圓角",
-          "glass": "玻璃強度",
-          "import": "匯入 JSON",
-          "export": "複製設定",
-          "reset": "重設",
-          "imported": "主題已匯入並套用",
-          "exported": "主題設定已複製",
-          "invalid": "JSON 格式無效，已保留目前主題"
-        },
-        "label": "任務完成提示音",
+        "label": "自訂主題",
+        "bgPrimary": "主背景",
+        "bgSecondary": "次級背景",
+        "bgTertiary": "三級背景",
+        "bgElevated": "浮層背景",
+        "bgHover": "懸停背景",
+        "textPrimary": "主文字",
+        "textSecondary": "次級文字",
+        "borderPrimary": "主邊框",
+        "borderSecondary": "次級邊框",
+        "accentPrimary": "強調色",
+        "accentHover": "強調懸停",
+        "userBubble": "使用者氣泡",
+        "userText": "氣泡文字",
+        "radius": "圓角",
+        "glass": "玻璃強度",
+        "import": "匯入 JSON",
+        "export": "複製設定",
+        "reset": "重設",
+        "imported": "主題已匯入並套用",
+        "exported": "主題設定已複製",
+        "invalid": "JSON 格式無效，已保留目前主題",
         "enabled": "已開啟",
         "disabled": "已關閉",
         "hint": "開啟後，AI 完成任務時會播放提示音，方便你離開螢幕時也能知道任務已完成。",
@@ -398,6 +398,26 @@
         "useDefault": "使用預設",
         "customSoundSaved": "自訂提示音已儲存"
       },
+      "label": "任務完成提示音",
+      "enabled": "已開啟",
+      "disabled": "已關閉",
+      "hint": "開啟後，AI 完成任務時會播放提示音，方便你離開螢幕時也能知道任務已完成。",
+      "onlyWhenUnfocused": "僅在 IDE 未聚焦時播放提示音",
+      "onlyWhenUnfocusedHint": "開啟後，僅在 IDE 視窗未聚焦時播放任務完成與提問提示音。",
+      "selectSound": "提示音",
+      "soundDefault": "預設",
+      "soundChime": "清脆鈴聲",
+      "soundBell": "鐘聲",
+      "soundDing": "叮咚",
+      "soundSuccess": "成功音",
+      "soundCustom": "自訂...",
+      "customSound": "自訂聲音檔",
+      "customSoundPlaceholder": "選擇或輸入音訊檔路徑",
+      "customSoundHint": "支援 WAV、MP3、AIFF 格式",
+      "testSound": "測試",
+      "browse": "瀏覽",
+      "useDefault": "使用預設",
+      "customSoundSaved": "自訂提示音已儲存",
       "sendShortcut": {
         "label": "發送快捷鍵",
         "enter": "Enter 發送",
@@ -433,7 +453,44 @@
         "enabled": "已開啟",
         "disabled": "已關閉",
         "hint": "關閉後，在已有訊息的會話中點選新建將直接建立，不再彈出確認視窗"
-      },
+      }
+    },
+    "sendShortcut": {
+      "label": "發送快捷鍵",
+      "enter": "Enter 發送",
+      "enterDesc": "按 Enter 發送訊息，Shift+Enter 換行",
+      "cmdEnter": "⌘/Ctrl+Enter 發送",
+      "cmdEnterDesc": "按 ⌘/Ctrl+Enter 發送訊息，Enter 換行"
+    },
+    "permissionDialogTimeout": {
+      "label": "權限與提問對話框超時時間",
+      "unit": "秒",
+      "hint": "設定 Claude 提問對話框和權限請求對話框的超時時間（30~3600 秒）。超時後對話框將自動關閉，Claude 會繼續執行。"
+    },
+    "chatBgColor": {
+      "label": "聊天背景色",
+      "custom": "自訂",
+      "reset": "恢復預設",
+      "hint": "自訂聊天區域的背景顏色，留空則跟隨主題預設顏色"
+    },
+    "chatBarColor": {
+      "label": "標題列與狀態列顏色",
+      "custom": "自訂",
+      "reset": "恢復預設",
+      "hint": "統一設定會話標題列與工作狀態列的主題顏色，留空則跟隨目前介面主題"
+    },
+    "userMsgColor": {
+      "label": "使用者訊息顏色",
+      "custom": "自訂",
+      "reset": "恢復預設",
+      "hint": "自訂您的訊息背景顏色，留空則跟隨主題預設顏色"
+    },
+    "newSessionConfirm": {
+      "label": "建立新會話時二次確認",
+      "enabled": "已開啟",
+      "disabled": "已關閉",
+      "hint": "關閉後，在已有訊息的會話中點選新建將直接建立，不再彈出確認視窗"
+    },
     "providers": "供應商管理",
     "providersDesc": "管理 Claude 和 Codex API 供應商配置，切換不同的 API 服務提供商",
     "providerTab": {
@@ -957,6 +1014,14 @@
         "dsh": {
           "name": "DeepSeek Harness",
           "description": "DeepSeek 官方編碼 Agent（dsh），支援工具呼叫、子代理與工作流程"
+        },
+        "minimax": {
+          "name": "MiniMax Code",
+          "description": "MiniMax 終端編碼智能體。需 Node.js 22.19+ / 24+（不支援 23）；命令：minimax / mcode"
+        },
+        "omp": {
+          "name": "OMP CLI",
+          "description": "支援多提供商模型的 Oh My Pi 終端編碼代理"
         }
       },
       "installDialog": {
@@ -994,8 +1059,24 @@
         "stopHost": "關閉（僅限外掛啟動的宿主）",
         "autoStart": "需要時自動啟動",
         "moreActions": "更多"
+      },
+      "visibility": {
+        "hide": "在切換選單中隱藏",
+        "show": "在切換選單中顯示"
       }
-    }
+    },
+    "socialDocs": "官方文檔",
+    "socialTitle": "關注我們",
+    "socialGithub": "GitHub 開源倉庫，歡迎 Star",
+    "socialX": "X（Twitter）@ZPeng31310",
+    "socialZhihu": "知乎 @vscodeai",
+    "socialXiaohongshu": "小紅書",
+    "socialDouyin": "抖音，滑鼠懸停掃碼關注",
+    "socialYoutube": "YouTube 頻道 @昆鹏马上优化",
+    "douyinQrAlt": "抖音二維碼",
+    "douyinId": "抖音號：nengyongai",
+    "douyinCopied": "抖音號已複製到剪貼簿",
+    "douyinCopyFailed": "複製失敗，請手動複製"
   },
   "history": {
     "title": "歷史會話",
@@ -1747,6 +1828,12 @@
       "shortLabel": "自動",
       "tooltip": "略過所有權限檢查",
       "description": "完全自動化，略過所有權限檢查【請謹慎使用】"
+    },
+    "auto": {
+      "label": "自動審批",
+      "shortLabel": "自動",
+      "tooltip": "由模型審查器自動批准或阻止操作",
+      "description": "使用供應商原生審查器處理審批，同時保留安全邊界"
     }
   },
   "codexModes": {
@@ -1769,6 +1856,12 @@
       "label": "Full Auto",
       "tooltip": "Codex approval_policy=never – runs commands and writes files without prompting (workspace sandbox still enforced).",
       "description": "Hands-off mode. Codex executes edits and shell commands immediately."
+    },
+    "auto": {
+      "label": "替我審批",
+      "shortLabel": "自動",
+      "tooltip": "Codex approvals_reviewer=auto_review：由自動審查器處理可審批請求。",
+      "description": "維持 workspace-write 沙箱；審查器無法批准的請求仍會升級處理。"
     }
   },
   "providers": {
@@ -1801,9 +1894,13 @@
       "title": "Beta 功能",
       "message": "此功能仍處於 Beta 階段。如果遇到使用 Bug，請及時回饋給作者。"
     },
-    "dsh": {
-      "label": "DeepSeek Harness"
-    }
+    "minimax": {
+      "label": "MiniMax Code"
+    },
+    "omp": {
+      "label": "OMP CLI"
+    },
+    "manageCli": "CLI 設定管理"
   },
   "promptEnhancer": {
     "title": "Prompt Enhancer",
@@ -2019,6 +2116,28 @@
           "step1": "2. 開啟「相依性管理」重新安裝最新版 SDK："
         }
       }
+    }
+  },
+  "ompModes": {
+    "default": {
+      "label": "預設",
+      "tooltip": "使用所選模型（或 OMP auto）",
+      "description": "使用模型下拉選單中選擇的模型；設為 Auto 時使用 OMP CLI 預設模型。"
+    },
+    "smol": {
+      "label": "Smol",
+      "tooltip": "快速模型角色 (omp --model smol)",
+      "description": "使用為 omp 的 smol 角色設定的模型執行此對話。覆寫模型下拉選單的選擇。"
+    },
+    "slow": {
+      "label": "Slow",
+      "tooltip": "推理模型角色 (omp --model slow)",
+      "description": "使用為 omp 的 slow 角色設定的模型執行此對話。覆寫模型下拉選單的選擇。"
+    },
+    "plan": {
+      "label": "Plan",
+      "tooltip": "規劃模型角色 (omp --model plan)",
+      "description": "使用為 omp 的 plan 角色設定的模型執行此對話。覆寫模型下拉選單的選擇。"
     }
   }
 }

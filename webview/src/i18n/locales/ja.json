@@ -86,8 +86,7 @@
     "retrySdkStatus": "再試行",
     "openSourceBanner": "このプロジェクトは100%オープンソースかつ無料を保証します（海賊版プロジェクトにご注意ください）",
     "openSourceBannerStar": "Star",
-    "openSourceBannerStarToast": "リポジトリのURLをクリップボードにコピーしました。ブラウザに貼り付けてアクセスできます ⭐",
-    "openSourceBannerStarAria": "リポジトリのURLをコピーして GitHub でスター",
+    "openSourceBannerStarAria": "GitHub でリポジトリを開いてスター",
     "goInstallSdk": "インストールへ",
     "commandNotImplemented": "`{{command}}` 機能はまだ実装されていません。",
     "clearCommandDescription": "会話履歴をクリアして新しいセッションを開始",
@@ -238,7 +237,8 @@
           "kimi": "Kimi CLI",
           "opencode": "OpenCode",
           "pi": "PI CLI",
-          "omp": "OMP CLI"
+          "omp": "OMP CLI",
+          "minimax": "MiniMax Code"
         },
         "currentProviderAuto": "Currently using automatic selection: {{provider}}",
         "currentProviderManual": "Currently using manually selected provider: {{provider}}",
@@ -520,11 +520,18 @@
     "communityDesc": "下のQRコードをスキャンして、公式WeChatグループに参加し、最新ニュースと技術サポートを入手",
     "communityQrTip": "WeChatでスキャンしてコミュニティに参加",
     "communityQrAlt": "公式WeChatコミュニティQRコード",
-    "githubTitle": "GitHub リポジトリ",
-    "githubDesc": "このプロジェクトは GitHub でオープンソースです。Star で応援してください！",
-    "githubCopyBtn": "リポジトリURLをコピー",
-    "githubCopied": "リポジトリURLがクリップボードにコピーされました。ブラウザでアクセスしてください。",
-    "githubCopyFailed": "コピーに失敗しました。手動でコピーしてください。",
+    "socialDocs": "公式ドキュメント",
+    "socialTitle": "フォローする",
+    "socialGithub": "GitHub リポジトリ — Star をお願いします！",
+    "socialX": "X（Twitter）@ZPeng31310",
+    "socialZhihu": "Zhihu @vscodeai",
+    "socialXiaohongshu": "Xiaohongshu（RED）",
+    "socialDouyin": "Douyin — ホバーしてスキャン",
+    "socialYoutube": "YouTube チャンネル",
+    "douyinQrAlt": "Douyin QRコード",
+    "douyinId": "Douyin ID: nengyongai",
+    "douyinCopied": "Douyin ID をクリップボードにコピーしました",
+    "douyinCopyFailed": "コピーに失敗しました。手動でコピーしてください。",
     "sponsor": "Sponsor",
     "sponsorDesc": "If this project helps you, consider sponsoring to support ongoing maintenance!",
     "alipay": "Alipay",
@@ -848,6 +855,10 @@
       "copied": "Copied to clipboard",
       "copyFailed": "Failed to copy",
       "tools": {
+        "minimax": {
+          "name": "MiniMax Code",
+          "description": "MiniMax ターミナルコーディングエージェント。Node.js 22.19+ / 24+（23 は不可）が必要。コマンド: minimax / mcode"
+        },
         "grok": {
           "name": "Grok CLI",
           "description": "xAI Grok terminal coding agent"
@@ -884,7 +895,11 @@
       "listTitle": "ローカル CLI ツール",
       "summary": "{{installed}} / {{total}} インストール済み",
       "moreComingSoon": "今後さらに対応予定",
-      "copyPath": "パスをコピー"
+      "copyPath": "パスをコピー",
+      "visibility": {
+        "hide": "プロバイダー切り替えメニューに表示しない",
+        "show": "プロバイダー切り替えメニューに表示する"
+      }
     }
   },
   "history": {
@@ -1620,8 +1635,15 @@
       "tooltip": "ファイル編集を自動的に承認",
       "description": "ファイルの作成/編集を自動的に承認し、確認手順を削減"
     },
+    "auto": {
+      "label": "自動承認モード",
+      "shortLabel": "自動承認",
+      "tooltip": "プロバイダーのネイティブ審査に承認リクエストを自動処理させます",
+      "description": "安全境界を維持しながらプロバイダーのネイティブ審査を使用します"
+    },
     "bypassPermissions": {
-      "label": "自動モード",
+      "label": "完全自動",
+      "shortLabel": "完全自動",
       "tooltip": "すべての権限チェックをバイパス",
       "description": "完全自動、すべての権限チェックをバイパス[注意して使用]"
     }
@@ -1641,6 +1663,12 @@
       "label": "Auto Edit",
       "tooltip": "Codex approval_policy=on-request – asks for approval when needed",
       "description": "Balanced option. Allows normal editing flow while still requiring approvals when needed."
+    },
+    "auto": {
+      "label": "代わりに承認",
+      "shortLabel": "自動承認",
+      "tooltip": "Codex approvals_reviewer=auto_review – 自動審査が対象の承認リクエストを処理します。",
+      "description": "workspace-write サンドボックスを維持し、承認できないリクエストはエスカレーションします。"
     },
     "bypassPermissions": {
       "label": "Full Auto",
@@ -1676,6 +1704,9 @@
     },
     "codex": {
       "label": "Codex"
+    },
+    "minimax": {
+      "label": "MiniMax Code"
     },
     "gemini": {
       "label": "Gemini Cli"
