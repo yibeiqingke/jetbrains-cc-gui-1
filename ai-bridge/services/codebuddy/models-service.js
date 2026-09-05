@@ -90,6 +90,10 @@ export async function listModels() {
     }
 
     const discovered = await Promise.race([discoveryPromise, timeout]);
+    // After the race settles, a late rejection of the losing promise must not
+    // become an unhandledRejection (it would print a second JSON line that
+    // CliModelsHandler could misread as the result).
+    discoveryPromise.catch(() => {});
     const models = normalizeCodeBuddyModels(discovered);
     emit({ success: true, defaultModel: models[0]?.id || null, models });
   } catch (error) {

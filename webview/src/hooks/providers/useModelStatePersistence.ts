@@ -505,7 +505,12 @@ export function useModelStatePersistence(options: UseModelStatePersistenceOption
                         : restoredProvider === 'codebuddy'
                           ? restoredCodeBuddyModel
                         : apply1MContextSuffix(restoredClaudeModel, restoredLongContextEnabled);
-          sendBridgeEvent('set_model', modelToSync);
+          // A dynamic provider restored before its catalog arrived may still
+          // hold an empty model id (CodeBuddy default) — sending set_model ''
+          // would clobber the Java-side session model and clear usage stats.
+          if (modelToSync) {
+            sendBridgeEvent('set_model', modelToSync);
+          }
           // Do NOT push the permission mode to Java on boot. Java is the source
           // of truth for the mode (persisted app-level in PropertiesComponent,
           // which survives a plugin reinstall) and the webview seeds its own mode
