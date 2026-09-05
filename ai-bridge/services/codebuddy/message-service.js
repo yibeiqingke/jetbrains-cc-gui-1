@@ -52,16 +52,84 @@ export function buildPromptWithAttachments(message, attachments) {
     : [];
   if (validAttachments.length === 0) return message || '';
 
-  const attachmentText = validAttachments.map((attachment) => {
-    const fileName = String(attachment.fileName || 'attachment');
-    const mediaType = String(attachment.mediaType || 'application/octet-stream');
-    const data = typeof attachment.data === 'string' ? attachment.data : '';
-    if (mediaType.startsWith('image/') && data) {
-      return `![${fileName}](data:${mediaType};base64,${data})`;
+  let budget = MAX_TOTAL_ATTACHMENT_PROMPT_CHARS;
+  const parts = [];
+  for (const attachment of validAttachments) {
+    if (budget <= 0) {
+      parts.push(`- ${describeAttachment(attachment)} — skipped: prompt size limit reached`);
+      continue;
     }
-    return `Attached file: ${fileName} (${mediaType})`;
-  }).join('\n');
-  return `${message || ''}\n\n## Attachments\n${attachmentText}`.trim();
+    const rendered = renderAttachment(attachment, budget);
+    budget -= rendered.length;
+    parts.push(`- ${rendered}`);
+  }
+  return `${message || ''}\n\n## Attachments\n${parts.join('\n')}`.trim();
+}
+
+/** Per-attachment embedded content cap (chars of prompt text / base64). */
+const MAX_ATTACHMENT_CONTENT_CHARS = 60_000;
+/** Total prompt budget for all attachments combined. */
+const MAX_TOTAL_ATTACHMENT_PROMPT_CHARS = 200_000;
+
+function describeAttachment(attachment) {
+  const fileName = String(attachment.fileName || 'attachment');
+  const mediaType = String(attachment.mediaType || 'application/octet-stream');
+  return `${fileName} (${mediaType})`;
+}
+
+function decodeBase64Utf8(data) {
+  try {
+    return Buffer.from(data, 'base64').toString('utf8');
+  } catch {
+    return '';
+  }
+}
+
+function isTextMediaType(mediaType, fileName = '') {
+  if (/^text\//i.test(mediaType)
+    || /^application\/(json|xml|javascript|ecmascript|x-yaml|yaml|toml|sql|x-sh|x-httpd-php|graphql)/i.test(mediaType)
+    || /^image\/svg\+xml/i.test(mediaType)) {
+    return true;
+  }
+  // Generic media type but a recognizable source/config file extension —
+  // treat it as text so the content gets inlined.
+  return /\.(txt|md|markdown|json|ya?ml|toml|xml|svg|csv|log|ini|cfg|conf|properties|sql|sh|bat|ps1|py|js|jsx|ts|tsx|java|kt|c|h|cpp|hpp|cs|go|rs|rb|php|html?|css|scss|less|vue|gradle|lock)$/i.test(fileName);
+}
+
+function renderAttachment(attachment, budget) {
+  const fileName = String(attachment.fileName || 'attachment');
+  const mediaType = String(attachment.mediaType || 'application/octet-stream');
+  const data = typeof attachment.data === 'string' ? attachment.data : '';
+
+  // Images go in as markdown data URLs — the CLI forwards them to the
+  // multimodal backend. Oversized images are skipped explicitly rather than
+  // silently ballooning the prompt.
+  if (mediaType.startsWith('image/') && data) {
+    if (data.length > MAX_ATTACHMENT_CONTENT_CHARS || data.length > budget) {
+      return `${describeAttachment(attachment)} — skipped: image too large (${Math.round(data.length * 3 / 4 / 1024)} KB)`;
+    }
+    return `![${fileName}](data:${mediaType};base64,${data})`;
+  }
+
+  // Text-like attachments are inlined so the model actually sees the content.
+  if (data && isTextMediaType(mediaType, fileName)) {
+    const decoded = decodeBase64Utf8(data);
+    if (!decoded) {
+      return `${describeAttachment(attachment)} — skipped: content could not be decoded`;
+    }
+    if (decoded.length > MAX_ATTACHMENT_CONTENT_CHARS || decoded.length > budget) {
+      const clipped = decoded.slice(0, Math.max(0, Math.min(MAX_ATTACHMENT_CONTENT_CHARS, budget)));
+      return `File: ${fileName} (${mediaType}) — first ${clipped.length} characters (file truncated):\n\`\`\`\n${clipped}\n\`\`\``;
+    }
+    return `File: ${fileName} (${mediaType}):\n\`\`\`\n${decoded}\n\`\`\``;
+  }
+
+  // Binary / unknown attachments: state explicitly that the content was NOT
+  // sent, instead of the old silent name-only placeholder.
+  if (data) {
+    return `${describeAttachment(attachment)} — skipped: binary content cannot be inlined`;
+  }
+  return `${describeAttachment(attachment)} — no content provided`;
 }
 
 export function normalizeReasoningEffort(value) {
@@ -112,6 +180,14 @@ export async function sendMessage(
   attachments = [],
 ) {
   let streamStarted = false;
+  // Graceful interruption: Java terminates the channel with SIGTERM on Unix
+  // (taskkill /F /T on Windows) so the SDK gets a chance to stop and clean up
+  // its own CLI child process instead of being orphaned. Declared before the
+  // try so the finally block can always detach the handlers.
+  const abortController = new AbortController();
+  const onTerminate = () => abortController.abort();
+  process.once('SIGTERM', onTerminate);
+  process.once('SIGINT', onTerminate);
   try {
     requireSdk('codebuddy');
     const sdk = await loadCodeBuddySdk();
@@ -130,6 +206,7 @@ export async function sendMessage(
       sessionId,
       reasoningEffort,
     });
+    options.abortController = abortController;
     if (codeBuddyCliPath) options.pathToCodebuddyCode = codeBuddyCliPath;
     if (sessionId && sessionId.trim()) {
       log('resuming session', sessionId.trim());
@@ -217,5 +294,8 @@ export async function sendMessage(
     console.error('[SEND_ERROR]', JSON.stringify(payload));
     process.stdout.write(`[SEND_ERROR] ${JSON.stringify(payload)}\n`);
     process.stdout.write(`${JSON.stringify(payload)}\n`);
+  } finally {
+    process.removeListener('SIGTERM', onTerminate);
+    process.removeListener('SIGINT', onTerminate);
   }
 }

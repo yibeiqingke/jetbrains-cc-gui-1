@@ -21,13 +21,27 @@ function normalizeReasoningEfforts(model) {
   return [...new Set(efforts)];
 }
 
+/** Prefix the CodeBuddy SDK uses for models defined in the local models.json. */
+const CUSTOM_LOCAL_PREFIX = 'custom-local:';
+
+/**
+ * Normalize the SDK's "custom-local:<id>" catalog id to the plain models.json
+ * id. The plain id is what gets persisted (selection, session restore) and
+ * what the SDK accepts on send, so a prefixed id must never reach the UI.
+ */
+export function stripCustomLocalPrefix(id) {
+  return typeof id === 'string' && id.startsWith(CUSTOM_LOCAL_PREFIX)
+    ? id.slice(CUSTOM_LOCAL_PREFIX.length)
+    : id;
+}
+
 export function normalizeCodeBuddyModels(rawModels) {
   if (!Array.isArray(rawModels)) return [];
   return rawModels.map(model => {
     const supportedEfforts = normalizeReasoningEfforts(model);
     return {
-      id: model?.modelId || model?.id,
-      label: model?.name || model?.label || model?.modelId || model?.id,
+      id: stripCustomLocalPrefix(model?.modelId || model?.id),
+      label: model?.name || model?.label || stripCustomLocalPrefix(model?.modelId) || model?.id,
       description: model?.description,
       credits: model?.credits,
       ...(typeof model?.supportsReasoning === 'boolean'
