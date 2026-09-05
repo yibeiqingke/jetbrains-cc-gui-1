@@ -1,3 +1,4 @@
+import { invalidateCliModelsCache } from '../../../hooks/providers/useCliModels';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CodexCustomModel } from '../../../types/provider';
 import { sendToJava } from '../../../utils/bridge';
@@ -148,6 +149,10 @@ export function useCodeBuddyModelsConfig(enabled: boolean) {
       })),
       deletedModels,
     }));
+    // Drop the chat-side module cache now: ChatScreen is unmounted while
+    // Settings is open, so its event listeners are gone. The next mount
+    // refetches an authoritative catalog from the edited models.json.
+    invalidateCliModelsCache('codebuddy');
     // Notify other consumers that models.json changed. Do NOT dispatch a
     // 'codebuddy-models-config-refresh' here: the save request itself triggers
     // the Java side to push the authoritative re-read, and firing a concurrent

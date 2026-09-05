@@ -51,6 +51,17 @@ function subscribeRoles(listener: () => void): () => void {
   };
 }
 
+/**
+ * Drop the cached catalog for a provider at the module level (usable even when
+ * no chat surface is mounted — e.g. Settings edits models.json while
+ * ChatScreen is unmounted). The next useCliModels mount refetches.
+ */
+export function invalidateCliModelsCache(providerId: string) {
+  delete modelsCache[providerId];
+  delete defaultModelCache[providerId];
+  delete catalogHasEntriesCache[providerId];
+}
+
 /** Test-only: clear module caches between cases. */
 export function __resetCliModelsCacheForTests() {
   for (const key of Object.keys(modelsCache)) delete modelsCache[key];
@@ -277,6 +288,38 @@ export function useCliModels(currentProvider: string) {
         beginLoad('codex');
       }
     });
+  }, [currentProvider, beginLoad]);
+
+  // Editing models.json in Settings changes what the CodeBuddy SDK serves, so
+  // the cached catalog must be dropped when the user returns to chat —
+  // otherwise deleted models stay selectable.
+  useEffect(() => {
+    const invalidate = () => {
+      invalidateCliModelsCache('codebuddy');
+      setModelsByProvider((prev) => {
+        if (!('codebuddy' in prev)) return prev;
+        const next = { ...prev };
+        delete next.codebuddy;
+        return next;
+      });
+      setDefaultModelByProvider((prev) => {
+        if (!('codebuddy' in prev)) return prev;
+        const next = { ...prev };
+        delete next.codebuddy;
+        return next;
+      });
+      setCatalogHasEntriesByProvider((prev) => {
+        if (!('codebuddy' in prev)) return prev;
+        const next = { ...prev };
+        delete next.codebuddy;
+        return next;
+      });
+      if (currentProvider === 'codebuddy') {
+        beginLoad('codebuddy');
+      }
+    };
+    window.addEventListener('codebuddy-models-config-changed', invalidate);
+    return () => window.removeEventListener('codebuddy-models-config-changed', invalidate);
   }, [currentProvider, beginLoad]);
 
   const refreshCliModels = useCallback((providerId: string) => {
